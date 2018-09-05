@@ -1,10 +1,9 @@
 package edu.baylor.ecs.cfgg.evaluator.service;
 
-import edu.baylor.ecs.cfgg.evaluator.repository.LoaderRepository;
+import edu.baylor.ecs.cfgg.evaluator.repository.EvaluatorRepository;
 import edu.baylor.ecs.cfgg.evaluator.service.models.MethodModel;
 import javafx.util.Pair;
 import javassist.*;
-import javassist.bytecode.MethodInfo;
 import javassist.expr.ExprEditor;
 import javassist.expr.MethodCall;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,14 +15,14 @@ import java.util.*;
 public class EvaluatorService {
 
     @Autowired
-    private LoaderRepository loaderRepository;
+    private EvaluatorRepository evaluatorRepository;
 
     private Map<String, ArrayList<MethodModel>> map;
 
     public String deriveApplicationStructure(){
 
         // Setup some initial objects
-        String classes = loaderRepository.getClasses();
+        String classes = evaluatorRepository.getClasses();
         map = new HashMap<>();
         String applicationStructureInJson;
         String[] classArr = classes.split(":");
