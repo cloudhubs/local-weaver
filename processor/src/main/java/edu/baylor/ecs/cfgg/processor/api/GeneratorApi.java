@@ -6,6 +6,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.io.IOException;
+import java.net.URISyntaxException;
+
 
 @RestController
 @RequestMapping("/processor")
@@ -16,7 +19,7 @@ public class GeneratorApi {
 
     @RequestMapping(value = "/sourceCode")
     @GetMapping
-    public String returnSourceCode() {
+    public String returnSourceCode() throws IOException, URISyntaxException {
         String sourceCode = processorService.generateSourceCode();
         //return graph source code in dot
         return sourceCode;
