@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.PrintWriter;
 
 @Service
 public class GeneratorService {
@@ -30,8 +31,14 @@ public class GeneratorService {
 
         //or directly show the user
 
-        String command = "ping -c 3 www.google.com";
 
+        //create file
+        PrintWriter writer = new PrintWriter("graph.dot", "UTF-8");
+        writer.println("Some content");
+        writer.close();
+
+        //String command = "dot -Tps graph.dot -o outfile.ps";
+        String command = "touch text.txt";
         Process proc = null;
         try {
             proc = Runtime.getRuntime().exec(command);
