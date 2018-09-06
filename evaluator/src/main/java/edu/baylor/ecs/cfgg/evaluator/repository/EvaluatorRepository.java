@@ -6,6 +6,6 @@ import org.springframework.stereotype.Service;
 public class EvaluatorRepository {
 
     public String getClasses(){
-        return "classes";
+        return "edu.baylor.ecs.cfgg.evaluator.mock.MockClassA:edu.baylor.ecs.cfgg.evaluator.mock.MockClassB";
     }
 }
