@@ -2,8 +2,6 @@ package edu.baylor.ecs.cfgg.evaluator.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.baylor.ecs.cfgg.evaluator.repository.EvaluatorRepository;
-import edu.baylor.ecs.cfgg.evaluator.service.models.MethodModel;
-import javafx.util.Pair;
 import javassist.*;
 import javassist.expr.ExprEditor;
 import javassist.expr.MethodCall;
