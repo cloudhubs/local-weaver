@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/evaluator")
-public class ProcessorAPi {
+public class EvaluatorApi {
 
     @Autowired
     private EvaluatorService evaluatorService;
