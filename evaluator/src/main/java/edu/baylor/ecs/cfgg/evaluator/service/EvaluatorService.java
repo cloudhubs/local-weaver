@@ -1,9 +1,12 @@
 package edu.baylor.ecs.cfgg.evaluator.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.baylor.ecs.cfgg.evaluator.repository.EvaluatorRepository;
-import edu.baylor.ecs.cfgg.evaluator.service.models.MethodModel;
-import javafx.util.Pair;
 import javassist.*;
+import javassist.bytecode.CodeAttribute;
+import javassist.bytecode.CodeIterator;
+import javassist.bytecode.MethodInfo;
+import javassist.bytecode.Mnemonic;
 import javassist.expr.ExprEditor;
 import javassist.expr.MethodCall;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,35 +20,25 @@ public class EvaluatorService {
     @Autowired
     private EvaluatorRepository evaluatorRepository;
 
-    private Map<String, ArrayList<MethodModel>> map;
+    private Map<List<String>, List<List<String>>> formattedMap;
 
     public String deriveApplicationStructure(){
 
         // Setup some initial objects
-        String classes = evaluatorRepository.getClasses();
-        map = new HashMap<>();
-        String applicationStructureInJson;
-        String[] classArr = classes.split(":");
+        formattedMap = new HashMap<>();
+        String applicationStructureInJson = "";
         ClassPool cp = ClassPool.getDefault();
 
         // Loop through every class in the array
-        for(String className : classArr){
+        for(Class className : evaluatorRepository.getClasses()){
 
             // Try to get the class as a CtClass
             CtClass clazz = null;
             try {
-                clazz = cp.get(className);
+                clazz = cp.get(className.getName());
             } catch (Exception e){
                 System.out.println(e.toString());
                 break;
-            }
-
-            // Store the key for the calling class
-            String key = clazz.toString();
-
-            // If this class isn't in the map, store it with a new list
-            if(!map.containsKey(key)){
-                map.put(key, new ArrayList<>());
             }
 
             // Retrieve all the methods of a class
@@ -54,23 +47,14 @@ public class EvaluatorService {
             // Loop through every method
             for(CtMethod method : methods){
 
-                // Retrieve the list of all method mappings from the class
-                ArrayList<MethodModel> list = map.get(key);
+                // Build the key for the formattedMap
+                ArrayList<String> formattedKey = new ArrayList<>();
+                formattedKey.add(clazz.getName());
+                formattedKey.add(method.getName());
 
-                // Loop through and check each of the MethodModels to see if it corresponds to the current method
-                boolean found = false;
-                for(MethodModel methodModel : list){
-                    if(methodModel.getMethod().equals(method)){
-                        // If the method model is for this method then no need to add it
-                        found = true;
-                    }
-                }
+                // Add the formattedKey to the formattedMap
+                formattedMap.put(formattedKey, new ArrayList<>());
 
-                // If there isnt a MethodModel for this method, add it
-                if(!found){
-                    MethodModel methodModel = new MethodModel(method);
-                    list.add(methodModel);
-                }
 
                 // Instrument the method to pull out the method calls
                 try {
@@ -78,12 +62,15 @@ public class EvaluatorService {
                         new ExprEditor() {
                             public void edit(MethodCall m) {
 
-                                for(MethodModel methodModel : list){
-                                    if(methodModel.getMethod().equals(method)){
-                                        // If the method model is for this method then add the sub method
-                                        methodModel.addSubMethod(m.getClassName(), m.getMethodName());
-                                    }
-                                }
+                                // Retrieve the list of subMethods
+                                List<List<String>> subMethodList = formattedMap.get(formattedKey);
+
+                                // Build the key for the subMethod
+                                ArrayList<String> subMethodKey = new ArrayList<>();
+                                subMethodKey.add(m.getClassName());
+                                subMethodKey.add(m.getMethodName());
+
+                                subMethodList.add(subMethodKey);
                             }
                         }
                     );
@@ -92,33 +79,12 @@ public class EvaluatorService {
                 }
             }
         }
-
-        // Build the JSON and return it
-        applicationStructureInJson = buildJson(map);
-        return applicationStructureInJson;
-    }
-
-    private String buildJson(Map<String, ArrayList<MethodModel>> map) {
-        String JSON = "";
-
-        Iterator<String> it = map.keySet().iterator();
-        while (it.hasNext()) {
-            String className = it.next();
-            JSON = JSON.concat("\"").concat(className).concat("\" { \n");
-            List<MethodModel> methodModelList = map.get(className);
-            for(MethodModel methodModel : methodModelList){
-                JSON = JSON.concat("\t\"").concat(methodModel.getMethod().getName()).concat("\" : { \n");
-
-                for(Pair<String, String> subMethod : methodModel.getSubMethods()){
-                    JSON = JSON.concat("\t\t\"").concat(subMethod.getKey()).concat("\":\"").concat(subMethod.getValue()).concat("\"\n");
-                }
-
-                JSON = JSON.concat("\t} \n");
-            }
-
-            JSON = JSON.concat("} \n");
+        try {
+            applicationStructureInJson = new ObjectMapper().writeValueAsString(formattedMap);
+        } catch (Exception e){
+            System.out.println(e.toString());
         }
-
-        return JSON;
+        // Build the JSON and return it
+        return applicationStructureInJson;
     }
 }
