@@ -3,6 +3,10 @@ package edu.baylor.ecs.cfgg.evaluator.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.baylor.ecs.cfgg.evaluator.repository.EvaluatorRepository;
 import javassist.*;
+import javassist.bytecode.CodeAttribute;
+import javassist.bytecode.CodeIterator;
+import javassist.bytecode.MethodInfo;
+import javassist.bytecode.Mnemonic;
 import javassist.expr.ExprEditor;
 import javassist.expr.MethodCall;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,19 +25,17 @@ public class EvaluatorService {
     public String deriveApplicationStructure(){
 
         // Setup some initial objects
-        String classes = evaluatorRepository.getClasses();
         formattedMap = new HashMap<>();
         String applicationStructureInJson = "";
-        String[] classArr = classes.split(":");
         ClassPool cp = ClassPool.getDefault();
 
         // Loop through every class in the array
-        for(String className : classArr){
+        for(Class className : evaluatorRepository.getClasses()){
 
             // Try to get the class as a CtClass
             CtClass clazz = null;
             try {
-                clazz = cp.get(className);
+                clazz = cp.get(className.getName());
             } catch (Exception e){
                 System.out.println(e.toString());
                 break;
@@ -52,6 +54,7 @@ public class EvaluatorService {
 
                 // Add the formattedKey to the formattedMap
                 formattedMap.put(formattedKey, new ArrayList<>());
+
 
                 // Instrument the method to pull out the method calls
                 try {
