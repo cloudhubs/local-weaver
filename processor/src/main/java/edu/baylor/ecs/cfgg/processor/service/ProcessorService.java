@@ -22,30 +22,11 @@ public class ProcessorService {
     public String generateSourceCode() throws IOException, URISyntaxException {
 
         //TODO : support module-module comms
-        //String json = evaluatorRepository.getGraphInJsonFormat();
-
-        // temp : read in from mock file
-
-        URL jsonName = ProcessorService.class.getClassLoader().getResource("mocks/sample1.json");
-        File jsonFile = new File(jsonName.toURI());
-        Scanner input = new Scanner(jsonFile);
-
-        String json = "";
-        while(input.hasNext()) {
-            json += input.nextLine();
-        }
-
-        // endtemp
-
-        //ToDo: process json to source code
+        String json = evaluatorRepository.getGraphInJsonFormat();
 
         String graph = processJson(json);
 
-        // temp : just print json text
-
         return graph;
-
-        // endtemp
 
     }
 
