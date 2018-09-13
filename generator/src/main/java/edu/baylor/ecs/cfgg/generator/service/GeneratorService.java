@@ -1,6 +1,6 @@
 package edu.baylor.ecs.cfgg.generator.service;
 
-import edu.baylor.ecs.cfgg.generator.repository.ProcessorRepository;
+import edu.baylor.ecs.cfgg.generator.repository.GeneratorRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -13,32 +13,17 @@ import java.io.PrintWriter;
 public class GeneratorService {
 
     @Autowired
-    private ProcessorRepository processorRepository;
+    private GeneratorRepository generatorRepository;
 
     public String generateGraph() throws IOException {
 
-        String source = processorRepository.getGraphSourceCode();
+        String source = generatorRepository.getGraphSourceCode();
 
-        //ToDo: processing graph from source code
-
-        //create file
-
-        //write the source string into the file
-
-        //do command to generate new file
-
-        //take this file and persist that to database
-
-        //or directly show the user
-
-
-        //create file
         PrintWriter writer = new PrintWriter("graph.dot", "UTF-8");
-        writer.println("Some content");
+        writer.println(source);
         writer.close();
 
-        //String command = "dot -Tps graph.dot -o outfile.ps";
-        String command = "touch text.txt";
+        String command = "dot -Tps graph.dot -o outfile.ps";
         Process proc = null;
         try {
             proc = Runtime.getRuntime().exec(command);
@@ -62,7 +47,7 @@ public class GeneratorService {
             e.printStackTrace();
         }
 
-        return "new graph";
+        return source;
     }
 
 }
