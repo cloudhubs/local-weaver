@@ -1,6 +1,5 @@
 package edu.baylor.ecs.cfgg.processor.service;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.baylor.ecs.cfgg.processor.repository.EvaluatorRepository;
 import org.json.JSONObject;
@@ -9,7 +8,6 @@ import org.springframework.stereotype.Service;
 
 import java.io.*;
 import java.net.URISyntaxException;
-import java.net.URL;
 import java.util.*;
 
 @Service
