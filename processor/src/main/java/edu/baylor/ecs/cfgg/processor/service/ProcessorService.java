@@ -1,6 +1,5 @@
 package edu.baylor.ecs.cfgg.processor.service;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.baylor.ecs.cfgg.processor.repository.EvaluatorRepository;
 import org.json.JSONObject;
@@ -9,7 +8,6 @@ import org.springframework.stereotype.Service;
 
 import java.io.*;
 import java.net.URISyntaxException;
-import java.net.URL;
 import java.util.*;
 
 @Service
@@ -22,30 +20,11 @@ public class ProcessorService {
     public String generateSourceCode() throws IOException, URISyntaxException {
 
         //TODO : support module-module comms
-        //String json = evaluatorRepository.getGraphInJsonFormat();
-
-        // temp : read in from mock file
-
-        URL jsonName = ProcessorService.class.getClassLoader().getResource("mocks/sample1.json");
-        File jsonFile = new File(jsonName.toURI());
-        Scanner input = new Scanner(jsonFile);
-
-        String json = "";
-        while(input.hasNext()) {
-            json += input.nextLine();
-        }
-
-        // endtemp
-
-        //ToDo: process json to source code
+        String json = evaluatorRepository.getGraphInJsonFormat();
 
         String graph = processJson(json);
 
-        // temp : just print json text
-
         return graph;
-
-        // endtemp
 
     }
 
