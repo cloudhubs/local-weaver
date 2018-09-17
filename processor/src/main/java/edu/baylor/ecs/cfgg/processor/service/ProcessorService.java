@@ -84,7 +84,7 @@ public class ProcessorService {
             output.append(graph);
             tempGraphs.remove(graph);
             if (tempGraphs.size() > 0) {
-                output.append(",");
+                output.append("&*");
             }
         }
         return output.toString();
