@@ -102,7 +102,7 @@ public class ProcessorService {
                         + list.get(0).substring(list.get(0).lastIndexOf('.') + 1) + "::"
                         + list.get(1).substring(list.get(1).lastIndexOf('.') + 1) + "\";");
                 String checkVal = "[" + list.get(0) + ", " + list.get(1) + "]";
-                if (children.contains(checkVal)) {
+                if (children.contains(checkVal) && !parent.equals(checkVal)) {
                     processParent(map, graphs, checkVal, children, graph);
                 }
             }
