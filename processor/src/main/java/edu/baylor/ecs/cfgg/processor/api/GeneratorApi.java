@@ -20,10 +20,8 @@ public class GeneratorApi {
 
     @RequestMapping(value = "/sourceCode")
     @GetMapping
-    public List<String> returnSourceCode() throws IOException, URISyntaxException {
-        List<String> sourceCode = processorService.generateSourceCode();
-        //return graph source code in dot
-        return sourceCode;
+    public String returnSourceCode() throws IOException, URISyntaxException {
+        return processorService.generateSourceCode();
 
     }
 

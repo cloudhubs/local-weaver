@@ -18,7 +18,7 @@ public class ProcessorService {
     EvaluatorRepository evaluatorRepository;
 
 
-    public List<String> generateSourceCode() throws IOException, URISyntaxException {
+    public String generateSourceCode() throws IOException, URISyntaxException {
 
         //TODO : support module-module comms
         String json = evaluatorRepository.getGraphInJsonFormat();
@@ -27,7 +27,7 @@ public class ProcessorService {
 
     }
 
-    private List<String> processJson(String json) throws IOException {
+    private String processJson(String json) throws IOException {
 
         JSONObject object = new JSONObject(json);
 
@@ -78,7 +78,16 @@ public class ProcessorService {
             dotGraphs.add(dotGraph.toString());
         }
 
-        return dotGraphs;
+        StringBuilder output = new StringBuilder();
+        List<String> tempGraphs = new ArrayList<>(dotGraphs);
+        for (String graph : dotGraphs) {
+            output.append(graph);
+            tempGraphs.remove(graph);
+            if (tempGraphs.size() > 0) {
+                output.append(",");
+            }
+        }
+        return output.toString();
     }
 
     private void processParent(Map<String, List<List<String>>> map, List<List<String>> graphs,
