@@ -31,6 +31,9 @@ public class EvaluatorRepository {
             e.printStackTrace();
         }
 
+        //String res = "{\"[edu.baylor.ecs.cfgg.evaluator.mock.MockClassA, getFieldB]\":[],\"[edu.baylor.ecs.cfgg.evaluator.mock.MockClassB, getFieldC]\":[],\"[edu.baylor.ecs.cfgg.evaluator.mock.MockClassA, getFieldC]\":[],\"[edu.baylor.ecs.cfgg.evaluator.mock.MockClassA, setFieldC]\":[],\"[edu.baylor.ecs.cfgg.evaluator.mock.MockClassA, setFieldB]\":[],\"[edu.baylor.ecs.cfgg.evaluator.mock.MockClassB, setFieldC]\":[],\"[edu.baylor.ecs.cfgg.evaluator.mock.MockClassA, setFieldA]\":[],\"[edu.baylor.ecs.cfgg.evaluator.mock.MockClassB, getFieldA]\":[],\"[edu.baylor.ecs.cfgg.evaluator.mock.MockClassB, setFieldB]\":[],\"[edu.baylor.ecs.cfgg.evaluator.mock.MockClassA, getFieldA]\":[],\"[edu.baylor.ecs.cfgg.evaluator.mock.MockClassB, setFieldA]\":[],\"[edu.baylor.ecs.cfgg.evaluator.mock.MockClassB, getFieldB]\":[],\"[edu.baylor.ecs.cfgg.evaluator.mock.MockClassB, doSomethingA]\":[],\"[edu.baylor.ecs.cfgg.evaluator.mock.MockClassB, doSomethingB]\":[[\"java.lang.String\",\"concat\"]],\"[edu.baylor.ecs.cfgg.evaluator.mock.MockClassB, doSomethingC]\":[[\"edu.baylor.ecs.cfgg.evaluator.mock.MockClassB\",\"doSomethingB\"],[\"java.lang.Integer\",\"toString\"],[\"java.lang.String\",\"concat\"]]}\n";
+
+        //return res;
         return result.toString();
     }
 
