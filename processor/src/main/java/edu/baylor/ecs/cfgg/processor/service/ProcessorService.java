@@ -23,9 +23,7 @@ public class ProcessorService {
         //TODO : support module-module comms
         String json = evaluatorRepository.getGraphInJsonFormat();
 
-        List<String> graph = processJson(json);
-
-        return graph;
+        return processJson(json);
 
     }
 
