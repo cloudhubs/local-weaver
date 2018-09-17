@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
+import java.util.List;
 
 
 @RestController
@@ -18,8 +19,8 @@ public class UIApi {
 
     @RequestMapping(value = "/graph")
     @GetMapping
-    public String getGraph() {
-        String graph = null;
+    public List<String> getGraph() {
+        List<String> graph = null;
         try {
             graph = generatorService.generateGraph();
         } catch (IOException e) {
