@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.util.List;
 
 
 @RestController
@@ -19,8 +20,8 @@ public class GeneratorApi {
 
     @RequestMapping(value = "/sourceCode")
     @GetMapping
-    public String returnSourceCode() throws IOException, URISyntaxException {
-        String sourceCode = processorService.generateSourceCode();
+    public List<String> returnSourceCode() throws IOException, URISyntaxException {
+        List<String> sourceCode = processorService.generateSourceCode();
         //return graph source code in dot
         return sourceCode;
 
