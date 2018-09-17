@@ -8,8 +8,11 @@ import javassist.bytecode.analysis.FramePrinter;
 import javassist.expr.ExprEditor;
 import javassist.expr.MethodCall;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 
+import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 @Service
@@ -19,15 +22,23 @@ public class EvaluatorService {
     private EvaluatorRepository evaluatorRepository;
 
     private Map<List<String>, List<List<String>>> formattedMap;
-    ClassPathScanner classPathScanner = new ClassPathScanner();
-    Set<ClassFile> classFileSet;
+    private ClassPathScanner classPathScanner = new ClassPathScanner();
+    private Set<ClassFile> classFileSet;
 
     public String deriveApplicationStructure(){
 
         ClassPool cp = ClassPool.getDefault();
 
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        PrintStream out = new PrintStream(baos, true, StandardCharsets.UTF_8);
+
         classPathScanner.scanUri("file://///Users/walkerand/Documents/Research/sm-core-2.2.0-SNAPSHOT.jar");
         classFileSet = classPathScanner.getClasses();
+        classPathScanner.scanUri("file://///Users/walkerand/Documents/Research/sm-core-model-2.2.0-SNAPSHOT.jar");
+        classFileSet.addAll(classPathScanner.getClasses());
+        classPathScanner.scanUri("file://///Users/walkerand/Documents/Research/sm-core-modules-2.2.0-SNAPSHOT.jar");
+        classFileSet.addAll(classPathScanner.getClasses());
 
         List<CtClass> classes = new ArrayList<>();
         for(ClassFile classFile : classFileSet){
@@ -46,27 +57,21 @@ public class EvaluatorService {
         formattedMap = new HashMap<>();
         String applicationStructureInJson = "";
 
-        FramePrinter fp = new FramePrinter(System.out);
+        FramePrinter fp = new FramePrinter(out);
 
         // Loop through every class in the array
         for(CtClass clazz : classes){
-        //for(Class className : evaluatorRepository.getClasses()){
-
-//            CtClass clazz = null;
-//            try {
-//                clazz = cp.get(className.getName());
-//            } catch (Exception e){
-//                System.out.println(e.toString());
-//                break;
-//            }
 
             // Retrieve all the methods of a class
             CtMethod[] methods = clazz.getDeclaredMethods();
 
             // Loop through every method
             for(CtMethod method : methods){
-
-                //fp.print(method);
+                try {
+                    fp.print(method);
+                } catch (Exception e){
+                    System.out.println(e.toString());
+                }
 
                 // Build the key for the formattedMap
                 ArrayList<String> formattedKey = new ArrayList<>();
@@ -105,7 +110,20 @@ public class EvaluatorService {
         } catch (Exception e){
             System.out.println(e.toString());
         }
+
+        String bytecode = new String(baos.toByteArray(), StandardCharsets.UTF_8);
+
+        out.close();
+        try {
+            baos.close();
+        } catch (Exception e){
+            System.out.println(e.toString());
+        }
+
+        //System.out.println(bytecode);
+
         // Build the JSON and return it
         return applicationStructureInJson;
+        //return bytecode;
     }
 }
