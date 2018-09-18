@@ -9,9 +9,7 @@ public class RandomService {
 
     public String randomString(){
         StringBuilder stringBuilder = new StringBuilder();
-        for (int i = 0; i < 5; i++){
-            stringBuilder.append(Math.random()*ALPHA_NUMERIC_STRING.length());
-        }
+        stringBuilder.append(Math.random()*ALPHA_NUMERIC_STRING.length());
         return stringBuilder.toString();
     }
 }
