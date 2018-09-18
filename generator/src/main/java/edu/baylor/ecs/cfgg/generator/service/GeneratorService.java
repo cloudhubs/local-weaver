@@ -23,7 +23,7 @@ public class GeneratorService {
     public List<String> generateGraph() throws IOException {
 
         String sources = generatorRepository.getGraphSourceCode();
-        List<String> sourceArray = Arrays.asList(sources.split("&*"));
+        List<String> sourceArray = Arrays.asList(sources.split("@"));
 
         for (String source: sourceArray
         ) {
@@ -35,13 +35,13 @@ public class GeneratorService {
 
             // Write output
 
-            PrintWriter writer = new PrintWriter(generatedName, "UTF-8");
+            PrintWriter writer = new PrintWriter("graphs/" + generatedName, "UTF-8");
             writer.println(source);
             writer.close();
 
             // Generate png
 
-            String command = "dot -Tps " + generatedName + " -o " + randomAppendix + ".png";
+            String command = "dot -Tps graphs/" + generatedName + " -o graphs/" + randomAppendix + ".ps";
             Process proc = null;
             try {
                 proc = Runtime.getRuntime().exec(command);
