@@ -4,15 +4,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.baylor.ecs.cfgg.evaluator.repository.EvaluatorRepository;
 import javassist.*;
 import javassist.bytecode.*;
-import javassist.bytecode.analysis.FramePrinter;
+import javassist.bytecode.annotation.Annotation;
 import javassist.expr.ExprEditor;
 import javassist.expr.MethodCall;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 
-import java.io.*;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 @Service
@@ -21,17 +18,12 @@ public class EvaluatorService {
     @Autowired
     private EvaluatorRepository evaluatorRepository;
 
-    private Map<List<String>, List<List<String>>> formattedMap;
     private ClassPathScanner classPathScanner = new ClassPathScanner();
     private Set<ClassFile> classFileSet;
 
     public String deriveApplicationStructure(){
 
         ClassPool cp = ClassPool.getDefault();
-
-
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        PrintStream out = new PrintStream(baos, true, StandardCharsets.UTF_8);
 
         classPathScanner.scanUri("file://///Users/walkerand/Documents/Research/sm-core-2.2.0-SNAPSHOT.jar");
         classFileSet = classPathScanner.getClasses();
@@ -40,9 +32,11 @@ public class EvaluatorService {
         classPathScanner.scanUri("file://///Users/walkerand/Documents/Research/sm-core-modules-2.2.0-SNAPSHOT.jar");
         classFileSet.addAll(classPathScanner.getClasses());
 
-        List<CtClass> classes = new ArrayList<>();
+        List<CtClass> componentsAndServices = new ArrayList<>();
+        List<CtClass> entities = new ArrayList<>();
+
         for(ClassFile classFile : classFileSet){
-            // Try to get the class as a CtClass
+
             CtClass clazz = null;
             try {
                 clazz = cp.makeClass(classFile);
@@ -50,14 +44,27 @@ public class EvaluatorService {
                 System.out.println(e.toString());
                 break;
             }
-            classes.add(clazz);
+
+            AnnotationsAttribute annotationsAttribute = (AnnotationsAttribute) classFile.getAttribute(AnnotationsAttribute.visibleTag);
+            if(annotationsAttribute != null) {
+                Annotation[] annotations = annotationsAttribute.getAnnotations();
+                for (Annotation annotation : annotations) {
+                    if (annotation.getTypeName().equals("org.springframework.stereotype.Service") || annotation.getTypeName().equals("org.springframework.stereotype.Component")){
+                        componentsAndServices.add(clazz);
+                    } else if (annotation.getTypeName().equals("javax.persistence.Entity")) {
+                        entities.add(clazz);
+                    }
+                }
+            }
         }
 
-        // Setup some initial objects
-        formattedMap = new HashMap<>();
-        String applicationStructureInJson = "";
+        return generateMap(componentsAndServices);
+    }
 
-        FramePrinter fp = new FramePrinter(out);
+    private String generateMap(List<CtClass> classes){
+        // Setup some initial objects
+        Map<List<String>, List<List<String>>> formattedMap = new HashMap<>();
+        String applicationStructureInJson = "";
 
         // Loop through every class in the array
         for(CtClass clazz : classes){
@@ -67,11 +74,6 @@ public class EvaluatorService {
 
             // Loop through every method
             for(CtMethod method : methods){
-                try {
-                    fp.print(method);
-                } catch (Exception e){
-                    System.out.println(e.toString());
-                }
 
                 // Build the key for the formattedMap
                 ArrayList<String> formattedKey = new ArrayList<>();
@@ -105,25 +107,13 @@ public class EvaluatorService {
                 }
             }
         }
+
         try {
             applicationStructureInJson = new ObjectMapper().writeValueAsString(formattedMap);
         } catch (Exception e){
             System.out.println(e.toString());
         }
 
-        String bytecode = new String(baos.toByteArray(), StandardCharsets.UTF_8);
-
-        out.close();
-        try {
-            baos.close();
-        } catch (Exception e){
-            System.out.println(e.toString());
-        }
-
-        //System.out.println(bytecode);
-
-        // Build the JSON and return it
         return applicationStructureInJson;
-        //return bytecode;
     }
 }
