@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.baylor.ecs.cfgg.evaluator.repository.EvaluatorRepository;
 import javassist.*;
 import javassist.bytecode.*;
-import javassist.bytecode.analysis.FramePrinter;
+import javassist.bytecode.annotation.Annotation;
 import javassist.expr.ExprEditor;
 import javassist.expr.MethodCall;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,33 +18,25 @@ public class EvaluatorService {
     @Autowired
     private EvaluatorRepository evaluatorRepository;
 
-    private Map<List<String>, List<List<String>>> formattedMap;
-    ClassPathScanner classPathScanner = new ClassPathScanner();
-    Set<ClassFile> classFileSet;
+    private ClassPathScanner classPathScanner = new ClassPathScanner();
+    private Set<ClassFile> classFileSet;
 
-    public String deriveApplicationStructure() {
+    public String deriveApplicationStructure(){
 
         ClassPool cp = ClassPool.getDefault();
 
-<<<<<<< Updated upstream
         classPathScanner.scanUri("file://///Users/walkerand/Documents/Research/sm-core-2.2.0-SNAPSHOT.jar");
         classFileSet = classPathScanner.getClasses();
-=======
-
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        //PrintStream out = new PrintStream(baos, true, StandardCharsets.UTF_8);
-
-        classPathScanner.scanUri("file://///Users/diehl/Documents/Research/sm-core-2.2.0-SNAPSHOT.jar");
-        classFileSet = classPathScanner.getClasses();
-        classPathScanner.scanUri("file://///Users/diehl/Documents/Research/sm-core-model-2.2.0-SNAPSHOT.jar");
+        classPathScanner.scanUri("file://///Users/walkerand/Documents/Research/sm-core-model-2.2.0-SNAPSHOT.jar");
         classFileSet.addAll(classPathScanner.getClasses());
-        classPathScanner.scanUri("file://///Users/diehl/Documents/Research/sm-core-modules-2.2.0-SNAPSHOT.jar");
+        classPathScanner.scanUri("file://///Users/walkerand/Documents/Research/sm-core-modules-2.2.0-SNAPSHOT.jar");
         classFileSet.addAll(classPathScanner.getClasses());
->>>>>>> Stashed changes
 
-        List<CtClass> classes = new ArrayList<>();
+        List<CtClass> componentsAndServices = new ArrayList<>();
+        List<CtClass> entities = new ArrayList<>();
+
         for(ClassFile classFile : classFileSet){
-            // Try to get the class as a CtClass
+
             CtClass clazz = null;
             try {
                 clazz = cp.makeClass(classFile);
@@ -52,46 +44,36 @@ public class EvaluatorService {
                 System.out.println(e.toString());
                 break;
             }
-            classes.add(clazz);
+
+            AnnotationsAttribute annotationsAttribute = (AnnotationsAttribute) classFile.getAttribute(AnnotationsAttribute.visibleTag);
+            if(annotationsAttribute != null) {
+                Annotation[] annotations = annotationsAttribute.getAnnotations();
+                for (Annotation annotation : annotations) {
+                    if (annotation.getTypeName().equals("org.springframework.stereotype.Service") || annotation.getTypeName().equals("org.springframework.stereotype.Component")){
+                        componentsAndServices.add(clazz);
+                    } else if (annotation.getTypeName().equals("javax.persistence.Entity")) {
+                        entities.add(clazz);
+                    }
+                }
+            }
         }
 
-        // Setup some initial objects
-        formattedMap = new HashMap<>();
-        String applicationStructureInJson = "";
+        return generateMap(componentsAndServices);
+    }
 
-<<<<<<< Updated upstream
-        FramePrinter fp = new FramePrinter(System.out);
-=======
-        //FramePrinter fp = new FramePrinter(out);
->>>>>>> Stashed changes
+    private String generateMap(List<CtClass> classes){
+        // Setup some initial objects
+        Map<List<String>, List<List<String>>> formattedMap = new HashMap<>();
+        String applicationStructureInJson = "";
 
         // Loop through every class in the array
         for(CtClass clazz : classes){
-        //for(Class className : evaluatorRepository.getClasses()){
-
-//            CtClass clazz = null;
-//            try {
-//                clazz = cp.get(className.getName());
-//            } catch (Exception e){
-//                System.out.println(e.toString());
-//                break;
-//            }
 
             // Retrieve all the methods of a class
             CtMethod[] methods = clazz.getDeclaredMethods();
 
             // Loop through every method
             for(CtMethod method : methods){
-<<<<<<< Updated upstream
-
-                //fp.print(method);
-=======
-                try {
-                    //fp.print(method);
-                } catch (Exception e){
-                    System.out.println(e.toString());
-                }
->>>>>>> Stashed changes
 
                 // Build the key for the formattedMap
                 ArrayList<String> formattedKey = new ArrayList<>();
@@ -125,27 +107,13 @@ public class EvaluatorService {
                 }
             }
         }
+
         try {
             applicationStructureInJson = new ObjectMapper().writeValueAsString(formattedMap);
         } catch (Exception e){
             System.out.println(e.toString());
         }
-<<<<<<< Updated upstream
-=======
 
-        String bytecode = new String(baos.toByteArray(), StandardCharsets.UTF_8);
-
-        //out.close();
-        try {
-            baos.close();
-        } catch (Exception e){
-            System.out.println(e.toString());
-        }
-
-        //System.out.println(bytecode);
-
->>>>>>> Stashed changes
-        // Build the JSON and return it
         return applicationStructureInJson;
     }
 }

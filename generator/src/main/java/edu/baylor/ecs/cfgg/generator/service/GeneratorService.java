@@ -8,6 +8,8 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.util.Arrays;
+import java.util.List;
 
 @Service
 public class GeneratorService {
@@ -15,14 +17,15 @@ public class GeneratorService {
     @Autowired
     private GeneratorRepository generatorRepository;
 
-    public String generateGraph() throws IOException {
+    @Autowired
+    private RandomService randomService;
 
-        String source = generatorRepository.getGraphSourceCode();
+    public List<String> generateGraph() throws IOException {
 
-        PrintWriter writer = new PrintWriter("graph.dot", "UTF-8");
-        writer.println(source);
-        writer.close();
+        String sources = generatorRepository.getGraphSourceCode();
+        List<String> sourceArray = Arrays.asList(sources.split("@"));
 
+<<<<<<< HEAD
 <<<<<<< Updated upstream
         String command = "dot -Tps graph.dot -o outfile.ps";
         Process proc = null;
@@ -48,24 +51,51 @@ public class GeneratorService {
 
             // Read the output from command
 >>>>>>> Stashed changes
+=======
+        for (String source: sourceArray
+        ) {
+>>>>>>> master
 
-        // Read the output
+            // Generate random string
 
-        BufferedReader reader =
-                new BufferedReader(new InputStreamReader(proc.getInputStream()));
+            String randomAppendix = randomService.randomString();
+            String generatedName = "graph" + randomAppendix + ".dot";
 
-        String line = "";
-        while((line = reader.readLine()) != null) {
-            System.out.print(line + "\n");
+            // Write output
+
+            PrintWriter writer = new PrintWriter("graphs/" + generatedName, "UTF-8");
+            writer.println(source);
+            writer.close();
+
+            // Generate png
+
+            String command = "dot -Tps graphs/" + generatedName + " -o graphs/" + randomAppendix + ".ps";
+            Process proc = null;
+            try {
+                proc = Runtime.getRuntime().exec(command);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            // Read the output from command
+
+            BufferedReader reader =
+                    new BufferedReader(new InputStreamReader(proc.getInputStream()));
+
+            String line = "";
+            while((line = reader.readLine()) != null) {
+                System.out.print(line + "\n");
+            }
+
+            try {
+                proc.waitFor();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
         }
 
-        try {
-            proc.waitFor();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
-        return source;
+        return Arrays.asList(sources.split(";"));
     }
 
 }
