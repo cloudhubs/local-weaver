@@ -23,6 +23,7 @@ public class GeneratorService {
         writer.println(source);
         writer.close();
 
+<<<<<<< Updated upstream
         String command = "dot -Tps graph.dot -o outfile.ps";
         Process proc = null;
         try {
@@ -30,6 +31,23 @@ public class GeneratorService {
         } catch (IOException e) {
             e.printStackTrace();
         }
+=======
+            PrintWriter writer = new PrintWriter("graphs/" + generatedName, "UTF-8");
+            writer.println(source);
+            writer.close();
+
+            // Generate png
+
+            String command = "dot -Tpng graphs/" + generatedName + " -o graphs/" + randomAppendix + ".png";
+            Process proc = null;
+            try {
+                proc = Runtime.getRuntime().exec(command);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            // Read the output from command
+>>>>>>> Stashed changes
 
         // Read the output
 

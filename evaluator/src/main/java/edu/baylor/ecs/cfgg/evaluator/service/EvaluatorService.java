@@ -22,12 +22,25 @@ public class EvaluatorService {
     ClassPathScanner classPathScanner = new ClassPathScanner();
     Set<ClassFile> classFileSet;
 
-    public String deriveApplicationStructure(){
+    public String deriveApplicationStructure() {
 
         ClassPool cp = ClassPool.getDefault();
 
+<<<<<<< Updated upstream
         classPathScanner.scanUri("file://///Users/walkerand/Documents/Research/sm-core-2.2.0-SNAPSHOT.jar");
         classFileSet = classPathScanner.getClasses();
+=======
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        //PrintStream out = new PrintStream(baos, true, StandardCharsets.UTF_8);
+
+        classPathScanner.scanUri("file://///Users/diehl/Documents/Research/sm-core-2.2.0-SNAPSHOT.jar");
+        classFileSet = classPathScanner.getClasses();
+        classPathScanner.scanUri("file://///Users/diehl/Documents/Research/sm-core-model-2.2.0-SNAPSHOT.jar");
+        classFileSet.addAll(classPathScanner.getClasses());
+        classPathScanner.scanUri("file://///Users/diehl/Documents/Research/sm-core-modules-2.2.0-SNAPSHOT.jar");
+        classFileSet.addAll(classPathScanner.getClasses());
+>>>>>>> Stashed changes
 
         List<CtClass> classes = new ArrayList<>();
         for(ClassFile classFile : classFileSet){
@@ -46,7 +59,11 @@ public class EvaluatorService {
         formattedMap = new HashMap<>();
         String applicationStructureInJson = "";
 
+<<<<<<< Updated upstream
         FramePrinter fp = new FramePrinter(System.out);
+=======
+        //FramePrinter fp = new FramePrinter(out);
+>>>>>>> Stashed changes
 
         // Loop through every class in the array
         for(CtClass clazz : classes){
@@ -65,8 +82,16 @@ public class EvaluatorService {
 
             // Loop through every method
             for(CtMethod method : methods){
+<<<<<<< Updated upstream
 
                 //fp.print(method);
+=======
+                try {
+                    //fp.print(method);
+                } catch (Exception e){
+                    System.out.println(e.toString());
+                }
+>>>>>>> Stashed changes
 
                 // Build the key for the formattedMap
                 ArrayList<String> formattedKey = new ArrayList<>();
@@ -105,6 +130,21 @@ public class EvaluatorService {
         } catch (Exception e){
             System.out.println(e.toString());
         }
+<<<<<<< Updated upstream
+=======
+
+        String bytecode = new String(baos.toByteArray(), StandardCharsets.UTF_8);
+
+        //out.close();
+        try {
+            baos.close();
+        } catch (Exception e){
+            System.out.println(e.toString());
+        }
+
+        //System.out.println(bytecode);
+
+>>>>>>> Stashed changes
         // Build the JSON and return it
         return applicationStructureInJson;
     }

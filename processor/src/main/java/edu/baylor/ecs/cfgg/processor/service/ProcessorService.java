@@ -23,7 +23,17 @@ public class ProcessorService {
         //TODO : support module-module comms
         String json = evaluatorRepository.getGraphInJsonFormat();
 
-        return processJson(json);
+        List<String> splitJson = splitJSONObjects(json);
+
+        String outString = "";
+        for (String str : splitJson) {
+            outString += processJson(str);
+            if (splitJson.indexOf(str) != splitJson.size()) {
+                outString += "@";
+            }
+        }
+
+        return outString;
 
     }
 
@@ -69,13 +79,15 @@ public class ProcessorService {
 
         List<String> dotGraphs = new ArrayList<>();
         for (List<String> graph : graphs) {
-            StringBuilder dotGraph = new StringBuilder();
-            dotGraph.append("strict digraph {\n");
-            for (String line : graph) {
-                dotGraph.append("  " + line + "\n");
+            if (graph.size() > 1) {
+                StringBuilder dotGraph = new StringBuilder();
+                dotGraph.append("strict digraph {\n");
+                for (String line : graph) {
+                    dotGraph.append("  " + line + "\n");
+                }
+                dotGraph.append("}\n");
+                dotGraphs.add(dotGraph.toString());
             }
-            dotGraph.append("}\n");
-            dotGraphs.add(dotGraph.toString());
         }
 
         StringBuilder output = new StringBuilder();
@@ -84,7 +96,7 @@ public class ProcessorService {
             output.append(graph);
             tempGraphs.remove(graph);
             if (tempGraphs.size() > 0) {
-                output.append("&*");
+                output.append("@");
             }
         }
         return output.toString();
@@ -107,6 +119,27 @@ public class ProcessorService {
                 }
             }
         }
+    }
+
+    private List<String> splitJSONObjects(String json) {
+        List<String> splitJson = new ArrayList<>();
+        Stack<Character> stack = new Stack<>();
+        int start = 0;
+        for (int i = json.indexOf('{'); i < json.length(); i++) {
+            char ch = json.charAt(i);
+            if (ch == '{') {
+                if (stack.empty()) {
+                    start = i;
+                }
+                stack.push(ch);
+            } else if (ch == '}') {
+                stack.pop();
+                if (stack.empty()) {
+                    splitJson.add(json.substring(start, i + 1));
+                }
+            }
+        }
+        return splitJson;
     }
 
 }
