@@ -81,7 +81,7 @@ public class ProcessorService {
         for (List<String> graph : graphs) {
             if (graph.size() > 1) {
                 StringBuilder dotGraph = new StringBuilder();
-                dotGraph.append("strict digraph {\n");
+                dotGraph.append("strict digraph {\n  rankdir=LR;\n");
                 for (String line : graph) {
                     dotGraph.append("  " + line + "\n");
                 }
