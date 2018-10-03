@@ -35,7 +35,7 @@ public abstract class EvaluatorService {
                         .sorted()
                         .map(String::valueOf)
                         .filter((path) -> {
-                            return String.valueOf(path).endsWith(".jar");
+                            return String.valueOf(path).toLowerCase().endsWith(".jar") || String.valueOf(path).toLowerCase().endsWith(".war");
                         })
                         .collect(Collectors.toList());
         } catch(Exception e){
