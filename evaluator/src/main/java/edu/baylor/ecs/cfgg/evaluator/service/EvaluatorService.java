@@ -57,7 +57,7 @@ public abstract class EvaluatorService {
             try {
                 clazz = cp.makeClass(classFile);
             } catch (Exception e){
-                System.out.println(e.toString());
+                System.out.println("Failed to make class:" + e.toString());
                 break;
             }
 
