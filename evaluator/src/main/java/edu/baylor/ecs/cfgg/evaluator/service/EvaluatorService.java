@@ -4,9 +4,10 @@ import edu.baylor.ecs.cfgg.evaluator.repository.EvaluatorRepository;
 import javassist.*;
 import javassist.bytecode.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.ResourceLoader;
 
 import java.io.File;
-import java.io.FilenameFilter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -19,12 +20,14 @@ public abstract class EvaluatorService {
     @Autowired
     private EvaluatorRepository evaluatorRepository;
 
-    ClassPathScanner classPathScanner = new ClassPathScanner();
-    Set<ClassFile> classFileSet;
+    @Autowired
+    private ResourceLoader resourceLoader;
+
+    private ClassPathScanner classPathScanner = new ClassPathScanner();
 
     public String deriveStructure(){
 
-        String directory = "/Users/walkerand/Documents/Research/jars/";
+        String directory = new File("").getAbsolutePath();
 
         Path start = Paths.get(directory);
         int maxDepth = 15;
@@ -35,17 +38,27 @@ public abstract class EvaluatorService {
                         .sorted()
                         .map(String::valueOf)
                         .filter((path) -> {
-                            return String.valueOf(path).toLowerCase().endsWith(".jar") || String.valueOf(path).toLowerCase().endsWith(".war");
+                            return (String.valueOf(path).toLowerCase().endsWith(".jar") || String.valueOf(path).toLowerCase().endsWith(".war")) && !String.valueOf(path).toLowerCase().contains("/.mvn/");
                         })
                         .collect(Collectors.toList());
         } catch(Exception e){
             e.printStackTrace();
         }
 
-        classFileSet = new HashSet<>();
+        List<Resource> resources = new ArrayList<>();
         for(String file : fileNames){
-            classPathScanner.scanUri("file:////" + file);
-            classFileSet.addAll(classPathScanner.getClasses());
+            Resource classPathResource = resourceLoader.getResource("file:" + file);
+            resources.add(classPathResource);
+        }
+
+        Set<ClassFile> classFileSet = new HashSet<>();
+        for(Resource resource : resources){
+            try{
+                classPathScanner.scanUri(resource.getURI().toString());
+                classFileSet.addAll(classPathScanner.getClasses());
+            } catch (Exception e){
+                System.out.println("IOException: " + e.toString());
+            }
         }
 
         ClassPool cp = ClassPool.getDefault();
