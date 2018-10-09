@@ -1,7 +1,7 @@
 package edu.baylor.ecs.cfgg.processor.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.sun.org.apache.xpath.internal.operations.Bool;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import edu.baylor.ecs.cfgg.processor.repository.EvaluatorRepository;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,47 +12,32 @@ import java.net.URISyntaxException;
 import java.util.*;
 
 @Service
-public class ProcessorService {
+public abstract class ProcessorService {
 
     @Autowired
-    EvaluatorRepository evaluatorRepository;
+    protected EvaluatorRepository evaluatorRepository;
 
+    protected List<String> parents;
+    protected List<String> children;
+    protected String json;
 
-    public String generateSourceCode() throws IOException, URISyntaxException {
+    public abstract String generateSourceCode() throws IOException, URISyntaxException;
 
-        //TODO : support module-module comms
-        String json = evaluatorRepository.getGraphInJsonFormat();
-
-        List<String> splitJson = splitJSONObjects(json);
-
-        String outString = "";
-        for (String str : splitJson) {
-            outString += processJson(str);
-            if (splitJson.indexOf(str) != splitJson.size()) {
-                outString += "@";
-            }
-        }
-
-        return outString;
-
-    }
-
-    private String processJson(String json) throws IOException {
-
+    protected final Map<String, List<List<String>>> populateParentsChildren(String json) throws IOException {
         JSONObject object = new JSONObject(json);
 
         Map<String, List<List<String>>> map;
         map = new ObjectMapper().readValue(json, HashMap.class);
 
-        List<String> parents = new ArrayList<>();
-        List<String> children = new ArrayList<>();
+        this.parents = new ArrayList<>();
+        this.children = new ArrayList<>();
 
         for (String parent : map.keySet()) {
             Map<String, List<List<String>>> tempMap = new HashMap<>(map);
             tempMap.remove(parent);
             boolean isChild = false;
-            for (String key : map.keySet()) {
-                for (List<String> list : map.get(key)) {
+            for (String key : tempMap.keySet()) {
+                for (List<String> list : tempMap.get(key)) {
                     String compVal = "[" + list.get(0) + ", " + list.get(1) + "]";
                     if (parent.equals(compVal)) {
                         isChild = true;
@@ -64,46 +49,19 @@ public class ProcessorService {
                 }
             }
             if (!isChild) {
-                parents.add(parent);
+                this.parents.add(parent);
             } else {
-                children.add(parent);
+                this.children.add(parent);
             }
         }
 
-        List<List<String>> graphs = new ArrayList<>();
-        for (String parent : parents) {
-            List<String> graph = new ArrayList<>();
-            processParent(map, graphs, parent, children, graph);
-            graphs.add(graph);
-        }
-
-        List<String> dotGraphs = new ArrayList<>();
-        for (List<String> graph : graphs) {
-            if (graph.size() > 1) {
-                StringBuilder dotGraph = new StringBuilder();
-                dotGraph.append("strict digraph {\n  rankdir=LR;\n");
-                for (String line : graph) {
-                    dotGraph.append("  " + line + "\n");
-                }
-                dotGraph.append("}\n");
-                dotGraphs.add(dotGraph.toString());
-            }
-        }
-
-        StringBuilder output = new StringBuilder();
-        List<String> tempGraphs = new ArrayList<>(dotGraphs);
-        for (String graph : dotGraphs) {
-            output.append(graph);
-            tempGraphs.remove(graph);
-            if (tempGraphs.size() > 0) {
-                output.append("@");
-            }
-        }
-        return output.toString();
+        return map;
     }
 
-    private void processParent(Map<String, List<List<String>>> map, List<List<String>> graphs,
-                               String parent, List<String> children, List<String> graph) {
+    protected abstract String processJson(String json) throws IOException;
+
+    protected void processParent(Map<String, List<List<String>>> map, List<List<String>> graphs,
+                               String parent, List<String> graph) {
         if (map.get(parent).size() == 0) {
             graph.add("\"" + parent.substring(parent.indexOf('['), parent.lastIndexOf(']')).replace(", ", "::")
                     .substring(parent.lastIndexOf('.') + 1) + "\";");
@@ -114,19 +72,19 @@ public class ProcessorService {
                         + list.get(0).substring(list.get(0).lastIndexOf('.') + 1) + "::"
                         + list.get(1).substring(list.get(1).lastIndexOf('.') + 1) + "\";");
                 String checkVal = "[" + list.get(0) + ", " + list.get(1) + "]";
-                if (children.contains(checkVal) && !parent.equals(checkVal)) {
-                    processParent(map, graphs, checkVal, children, graph);
+                if (this.children.contains(checkVal) && !parent.equals(checkVal)) {
+                    processParent(map, graphs, checkVal, graph);
                 }
             }
         }
     }
 
-    private List<String> splitJSONObjects(String json) {
+    protected List<String> splitJSONObjects() {
         List<String> splitJson = new ArrayList<>();
         Stack<Character> stack = new Stack<>();
         int start = 0;
-        for (int i = json.indexOf('{'); i < json.length(); i++) {
-            char ch = json.charAt(i);
+        for (int i = this.json.indexOf('{'); i < this.json.length(); i++) {
+            char ch = this.json.charAt(i);
             if (ch == '{') {
                 if (stack.empty()) {
                     start = i;
@@ -135,7 +93,7 @@ public class ProcessorService {
             } else if (ch == '}') {
                 stack.pop();
                 if (stack.empty()) {
-                    splitJson.add(json.substring(start, i + 1));
+                    splitJson.add(this.json.substring(start, i + 1));
                 }
             }
         }
