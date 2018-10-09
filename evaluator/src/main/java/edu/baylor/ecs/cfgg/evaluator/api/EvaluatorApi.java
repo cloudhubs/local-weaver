@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class EvaluatorApi {
 
     @Autowired
-    private DependencyEvaluatorService evaluatorService;
+    private ApplicationEvaluatorService evaluatorService;
 
     @RequestMapping(value = "/json")
     @GetMapping
