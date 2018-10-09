@@ -1,5 +1,6 @@
 package edu.baylor.ecs.cfgg.processor.api;
 
+import edu.baylor.ecs.cfgg.processor.service.CouplingCohesionProcessorService;
 import edu.baylor.ecs.cfgg.processor.service.ProcessorService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,7 +17,7 @@ import java.util.List;
 public class GeneratorApi {
 
     @Autowired
-    private ProcessorService processorService;
+    private CouplingCohesionProcessorService processorService;
 
     @RequestMapping(value = "/sourceCode")
     @GetMapping
