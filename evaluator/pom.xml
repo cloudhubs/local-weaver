@@ -64,13 +64,13 @@
             <version>2.9.6</version>
         </dependency>
 
-        <dependency>
+        <!--<dependency>
             <groupId>edu.baylor.ecs.cfgg.common.flow</groupId>
             <artifactId>cfgg-common</artifactId>
             <version>1.0</version>
             <scope>system</scope>
             <systemPath>${project.basedir}/src/main/resources/cfgg-common.jar</systemPath>
-        </dependency>
+        </dependency>-->
     </dependencies>
 
     <build>
