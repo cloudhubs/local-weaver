@@ -1,7 +1,7 @@
 package edu.baylor.ecs.cfgg.evaluator.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import edu.baylor.ecs.seer.cfgg.flow.Node;
+//import edu.baylor.ecs.seer.cfgg.flow.Node;
 import javassist.CtClass;
 import javassist.CtMethod;
 import javassist.bytecode.AnnotationsAttribute;
@@ -22,7 +22,7 @@ public class BytecodeEvaluatorService extends EvaluatorService {
     private StringBuilder sb;
 
     protected final String process(List<CtClass> classes){
-        // Setup some initial objects
+        /*// Setup some initial objects
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         PrintStream out = new PrintStream(baos, true, StandardCharsets.UTF_8);
         FramePrinter fp = new FramePrinter(out);
@@ -62,7 +62,8 @@ public class BytecodeEvaluatorService extends EvaluatorService {
         }
 
         //return applicationStructureInJson;
-        return sb.toString();
+        return sb.toString();*/
+        return "TODO";
     }
 
     protected final boolean filter(CtClass clazz){
@@ -80,7 +81,7 @@ public class BytecodeEvaluatorService extends EvaluatorService {
 
     // The purpose of preprocessing is to remove any methods that are abstract or have no body and also
     // to break up each method into a separate string
-    private List<String> preprocessBytecode(String bytecode){
+    /*private List<String> preprocessBytecode(String bytecode){
         // Setup some initial strctures
         List<String> storage = new ArrayList<>();
         String currentMethod = "";
@@ -326,5 +327,5 @@ public class BytecodeEvaluatorService extends EvaluatorService {
             }
         }
 
-    }
+    }*/
 }
