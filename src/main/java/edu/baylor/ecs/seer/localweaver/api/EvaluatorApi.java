@@ -1,6 +1,6 @@
-package edu.baylor.ecs.cfgg.evaluator.api;
+package edu.baylor.ecs.seer.localweaver.api;
 
-import edu.baylor.ecs.cfgg.evaluator.service.ApplicationEvaluatorService;
+import edu.baylor.ecs.seer.localweaver.service.ApplicationEvaluatorService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;

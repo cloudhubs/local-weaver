@@ -1,4 +1,4 @@
-package edu.baylor.ecs.cfgg.evaluator;
+package edu.baylor.ecs.seer.localweaver;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

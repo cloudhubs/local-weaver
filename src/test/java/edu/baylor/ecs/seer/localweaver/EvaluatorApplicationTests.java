@@ -1,4 +1,4 @@
-package edu.baylor.ecs.cfgg.evaluator;
+package edu.baylor.ecs.seer.localweaver;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;

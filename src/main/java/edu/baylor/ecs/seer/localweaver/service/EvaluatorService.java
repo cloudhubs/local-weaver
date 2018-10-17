@@ -1,6 +1,6 @@
-package edu.baylor.ecs.cfgg.evaluator.service;
+package edu.baylor.ecs.seer.localweaver.service;
 
-import edu.baylor.ecs.cfgg.evaluator.repository.EvaluatorRepository;
+import edu.baylor.ecs.seer.localweaver.repository.EvaluatorRepository;
 import javassist.*;
 import javassist.bytecode.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,12 +38,14 @@ public abstract class EvaluatorService {
                         .sorted()
                         .map(String::valueOf)
                         .filter((path) -> {
-                            return (String.valueOf(path).toLowerCase().endsWith(".jar") || String.valueOf(path).toLowerCase().endsWith(".war")) && !String.valueOf(path).toLowerCase().contains("/.mvn/");
+                            return (String.valueOf(path).toLowerCase().endsWith(".jar") || String.valueOf(path).toLowerCase().endsWith(".war")) && !String.valueOf(path).toLowerCase().contains("/.mvn/") && !String.valueOf(path).toLowerCase().startsWith("/usr/lib/jvm/");
                         })
                         .collect(Collectors.toList());
         } catch(Exception e){
             e.printStackTrace();
         }
+
+        System.out.println(fileNames);
 
         List<Resource> resources = new ArrayList<>();
         for(String file : fileNames){

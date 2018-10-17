@@ -1,6 +1,6 @@
-package edu.baylor.ecs.cfgg.evaluator;
+package edu.baylor.ecs.seer.localweaver;
 
-import edu.baylor.ecs.cfgg.evaluator.service.ApplicationEvaluatorService;
+import edu.baylor.ecs.seer.localweaver.service.ApplicationEvaluatorService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
