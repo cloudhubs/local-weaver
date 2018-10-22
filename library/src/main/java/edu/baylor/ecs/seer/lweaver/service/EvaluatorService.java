@@ -41,7 +41,12 @@ public abstract class EvaluatorService {
                         .sorted()
                         .map(String::valueOf)
                         .filter((path) -> {
-                            return (String.valueOf(path).toLowerCase().endsWith(".jar") || String.valueOf(path).toLowerCase().endsWith(".war")) && !String.valueOf(path).toLowerCase().contains("/.mvn/") && !String.valueOf(path).toLowerCase().startsWith("/usr/lib/jvm/");
+                            return (String.valueOf(path).toLowerCase().endsWith(".jar") ||
+                                    String.valueOf(path).toLowerCase().endsWith(".war")) &&
+                                    !String.valueOf(path).toLowerCase().contains("/.mvn/") &&
+                                    !String.valueOf(path).toLowerCase().startsWith("/usr/lib/jvm/") &&
+                                    !String.valueOf(path).toLowerCase().contains("/target/dependency/") &&
+                                    !String.valueOf(path).toLowerCase().contains("/gradle");
                         })
                         .collect(Collectors.toList());
         } catch(Exception e){
