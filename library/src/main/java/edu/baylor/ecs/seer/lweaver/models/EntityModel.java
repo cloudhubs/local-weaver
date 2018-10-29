@@ -1,5 +1,7 @@
 package edu.baylor.ecs.seer.lweaver.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -36,6 +38,12 @@ public class EntityModel {
 
     public void setInstanceVariables(List<InstanceVariableModel> instanceVariables) {
         this.instanceVariables = instanceVariables;
+    }
+
+    @JsonIgnore
+    public String getSimpleClassName(){
+        int index = this.className.lastIndexOf('.');
+        return (index > 0) ? this.className.substring(index + 1) : this.className;
     }
 
     public void addInstanceVariableModel(InstanceVariableModel instanceVariableModel){
