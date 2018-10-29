@@ -51,7 +51,7 @@ public class LocalWeaverApi {
 
     // The data model endpoint generates a structure of entity objects and their member variables along with the
     // annotation values on those member variables
-    @RequestMapping(value = "/data-model")
+    @RequestMapping(value = "/dataModel")
     @GetMapping
     public String generateDataModelStructure() {
         return dataModelService.deriveStructure();
