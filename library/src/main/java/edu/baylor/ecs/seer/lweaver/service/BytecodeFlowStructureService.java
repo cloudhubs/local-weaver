@@ -17,7 +17,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 @Service
-public class BytecodeEvaluatorService extends EvaluatorService {
+public class BytecodeFlowStructureService extends EvaluatorService {
 
     private StringBuilder sb;
 

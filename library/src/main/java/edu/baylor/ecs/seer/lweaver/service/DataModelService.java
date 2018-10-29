@@ -11,7 +11,7 @@ import org.springframework.stereotype.Service;
 import java.util.*;
 
 @Service
-public class EntityEvaluatorService extends EvaluatorService {
+public class DataModelService extends EvaluatorService {
 
     protected final String process(List<CtClass> entities) {
 
