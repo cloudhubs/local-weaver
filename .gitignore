@@ -1,2 +1,4 @@
 .idea
 *.iml
+/library/target
+/application/target
