@@ -1,6 +1,8 @@
 package edu.baylor.ecs.seer.lweaver.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import edu.baylor.ecs.seer.lweaver.models.EntityModel;
+import edu.baylor.ecs.seer.lweaver.models.InstanceVariableModel;
 import javassist.CtClass;
 import javassist.CtField;
 import javassist.bytecode.AnnotationsAttribute;
@@ -13,28 +15,29 @@ import java.util.*;
 @Service
 public class DataModelService extends EvaluatorService {
 
-    protected final String process(List<CtClass> entities) {
+    protected final String process(List<CtClass> entityClasses) {
 
-        Map<String, Map<String, List< List<String> > >> map = new HashMap<>();
+        // Establish the list of entities
+        List<EntityModel> entities = new ArrayList<>();
 
         // Loop through every class
-        for(CtClass clazz : entities){
+        for(CtClass clazz : entityClasses){
 
-            // Create map for storing fields and their annotations
-            Map<String, List< List<String> >> fieldMap = new HashMap<>();
+            // Create a new EntityModel for the class
+            EntityModel entityModel = new EntityModel(clazz.getName());
 
-            // Get the fields and loop through them
+            // Get all the public and private fields
             CtField[] fields = clazz.getFields();
             CtField[] privateFields = clazz.getDeclaredFields();
-
             List<CtField> aggregateFields = new ArrayList<>();
             aggregateFields.addAll(Arrays.asList(fields));
             aggregateFields.addAll(Arrays.asList(privateFields));
 
+            // Loop through all of the instance fields
             for(CtField field : aggregateFields) {
 
-                // Add the field to the map
-                fieldMap.put(field.getName(), new ArrayList<>());
+                // Create a model for the instance field
+                InstanceVariableModel instanceVariableModel = new InstanceVariableModel(field.getName());
 
                 // Get the attributes and loop through them
                 AnnotationsAttribute annotationsAttribute = (AnnotationsAttribute) field.getFieldInfo().getAttribute(AnnotationsAttribute.visibleTag);
@@ -52,32 +55,32 @@ public class DataModelService extends EvaluatorService {
                                 // Get the value for the name
                                 MemberValue value = annotation.getMemberValue(name);
 
-                                // Build the pair
-                                List<String> key = new ArrayList<>();
-                                key.add(name);
-                                key.add(value.toString());
-
-                                // Add key to fieldMap
-                                fieldMap.get(field.getName()).add(key);
+                                // Add the attirbute to the instance field model
+                                instanceVariableModel.addAttribute(name, value.toString());
                             }
                         }
 
                     }
                 }
+
+                // Add the field to the entity
+                entityModel.addInstanceVariableModel(instanceVariableModel);
             }
 
-            map.put(clazz.getName(), fieldMap);
+            // Add the entity to the list
+            entities.add(entityModel);
 
         }
 
-
+        // Convert the list of entities into JSON
         String inJson = "";
         try {
-            inJson = new ObjectMapper().writeValueAsString(map);
+            inJson = new ObjectMapper().writeValueAsString(entities);
         } catch (Exception e){
             System.out.println(e.toString());
         }
 
+        // Return the list of entities as JSON
         return inJson;
     }
 
