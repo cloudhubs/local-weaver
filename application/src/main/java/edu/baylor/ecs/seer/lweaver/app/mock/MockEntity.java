@@ -1,4 +1,4 @@
-package edu.baylor.ecs.seer.lweaver.mock;
+package edu.baylor.ecs.seer.lweaver.app.mock;
 
 import javax.persistence.*;
 
