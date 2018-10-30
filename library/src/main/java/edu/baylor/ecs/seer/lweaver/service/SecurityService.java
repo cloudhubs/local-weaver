@@ -16,7 +16,7 @@ import org.springframework.stereotype.Service;
 import java.util.*;
 
 @Service
-public class SecurityEvaluatorService extends EvaluatorService {
+public class SecurityService extends EvaluatorService {
 
     private Map<String, List<String>> roles = new HashMap<>();
     private Map<String, List<String>> nodes = new HashMap<>();

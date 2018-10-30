@@ -17,7 +17,7 @@ import static java.util.Map.Entry.comparingByValue;
 import static java.util.stream.Collectors.toMap;
 
 @Service
-public class DependencyEvaluatorService extends EvaluatorService {
+public class DependencyService extends EvaluatorService {
 
     protected final String process(List<CtClass> classes){
 

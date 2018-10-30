@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.Map;
 
 @Service
-public class ApplicationEvaluatorService extends EvaluatorService {
+public class FlowStructureService extends EvaluatorService {
 
     protected final String process(List<CtClass> classes){
         // Setup some initial objects

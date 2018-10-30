@@ -5,7 +5,6 @@ import javassist.bytecode.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
-import edu.baylor.ecs.seer.lweaver.repository.EvaluatorRepository;
 
 import java.io.File;
 import java.nio.file.Files;
@@ -19,9 +18,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public abstract class EvaluatorService {
-
-    @Autowired
-    private EvaluatorRepository evaluatorRepository;
 
     @Autowired
     private ResourceLoader resourceLoader;
