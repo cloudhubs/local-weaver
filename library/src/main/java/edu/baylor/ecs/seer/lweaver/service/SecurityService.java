@@ -68,52 +68,54 @@ public class SecurityService extends EvaluatorService {
             for ( CtMethod method : clazz.getDeclaredMethods() ) {
                 MethodInfo methodInfo = method.getMethodInfo();
                 AnnotationsAttribute attr = (AnnotationsAttribute) methodInfo.getAttribute(AnnotationsAttribute.visibleTag);
-                methodAnnotations = attr.getAnnotations();
-                nodes.put(method.getLongName(), new ArrayList<>());
-                roles.put(method.getLongName(), new ArrayList<>());
-                for (Annotation annotation : methodAnnotations) {
-                    if (annotation.getTypeName().equals("javax.annotation.security.RolesAllowed")) {
-                        Set<String> names = annotation.getMemberNames();
-                        for (String name : names) {
-                            MemberValue value = annotation.getMemberValue(name);
-                            if (value instanceof ArrayMemberValue) {
-                                ArrayMemberValue amv = (ArrayMemberValue)value;
-                                MemberValue[] memberValues = amv.getValue();
-                                for (MemberValue mv : memberValues) {
-                                    String val = mv.toString().replace("\"", "");
-                                    roles.get(method.getLongName()).add(val);
+                if (attr != null) {
+                    methodAnnotations = attr.getAnnotations();
+                    nodes.put(method.getLongName(), new ArrayList<>());
+                    roles.put(method.getLongName(), new ArrayList<>());
+                    for (Annotation annotation : methodAnnotations) {
+                        if (annotation.getTypeName().equals("javax.annotation.security.RolesAllowed")) {
+                            Set<String> names = annotation.getMemberNames();
+                            for (String name : names) {
+                                MemberValue value = annotation.getMemberValue(name);
+                                if (value instanceof ArrayMemberValue) {
+                                    ArrayMemberValue amv = (ArrayMemberValue) value;
+                                    MemberValue[] memberValues = amv.getValue();
+                                    for (MemberValue mv : memberValues) {
+                                        String val = mv.toString().replace("\"", "");
+                                        roles.get(method.getLongName()).add(val);
+                                    }
                                 }
                             }
+                        } else if (annotation.getTypeName().equals("javax.annotation.security.PermitAll")) {
+                            if (defaultPerms.size() > 0) {
+                                roles.get(method.getLongName()).addAll(defaultPerms);
+                            } else {
+                                roles.get(method.getLongName()).add("SEER_DEFAULT_ALL_ROLES_PERMITTED");
+                            }
                         }
-                    } else if (annotation.getTypeName().equals("javax.annotation.security.PermitAll")) {
-                        if (defaultPerms.size() > 0) {
-                            roles.get(method.getLongName()).addAll(defaultPerms);
-                        } else {
-                            roles.get(method.getLongName()).add("SEER_DEFAULT_ALL_ROLES_PERMITTED");
-                        }
-                    }
 
-                    if (annotation.getTypeName().equals("javax.annotation.security.RolesAllowed") ||
-                        annotation.getTypeName().equals("javax.annotation.security.PermitAll")) {
-                        try {
-                            method.instrument(
-                                    new ExprEditor() {
-                                        public void edit(MethodCall m) {
-                                            List<String> subMethodList = nodes.get(method.getLongName());
+                        if (annotation.getTypeName().equals("javax.annotation.security.RolesAllowed") ||
+                                annotation.getTypeName().equals("javax.annotation.security.PermitAll")) {
+                            try {
+                                method.instrument(
+                                        new ExprEditor() {
+                                            public void edit(MethodCall m) {
+                                                List<String> subMethodList = nodes.get(method.getLongName());
 
-                                            CtMethod ctMethod;
-                                            try {
-                                                ctMethod = m.getMethod();
-                                            } catch (Exception ex) {
-                                                return;
+                                                CtMethod ctMethod;
+                                                try {
+                                                    ctMethod = m.getMethod();
+                                                } catch (Exception ex) {
+                                                    return;
+                                                }
+                                                subMethodList.add(ctMethod.getLongName());
                                             }
-                                            subMethodList.add(ctMethod.getLongName());
                                         }
-                                    }
-                            );
-                        } catch (CannotCompileException cex) {
-                            System.out.println(cex.toString());
-                            return false;
+                                );
+                            } catch (CannotCompileException cex) {
+                                System.out.println(cex.toString());
+                                return false;
+                            }
                         }
                     }
                 }
