@@ -297,7 +297,10 @@ public class BytecodeFlowStructureService extends EvaluatorService {
             if(!map.get(key).getType().equals("conditional") && !map.get(key).getType().equals("goto")){
                 // Clear the existing children and add the next child
                 map.get(key).setChildren(new ArrayList<>());
+                map.get(sortedList.get(i+1)).setParents(new ArrayList<>());
                 map.get(key).addChild(map.get(sortedList.get(i+1)));
+            } else if (map.get(key).getType().equals("goto")){
+                map.get(sortedList.get(i + 1)).removeParent(map.get(key));
             }
         }
 
