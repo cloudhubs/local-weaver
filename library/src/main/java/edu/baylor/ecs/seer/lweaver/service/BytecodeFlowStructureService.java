@@ -2,9 +2,11 @@ package edu.baylor.ecs.seer.lweaver.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 //import edu.baylor.ecs.seer.cfgg.flow.Node;
+import edu.baylor.ecs.seer.lweaver.models.Node;
 import javassist.CtClass;
 import javassist.CtMethod;
 import javassist.bytecode.AnnotationsAttribute;
+import javassist.bytecode.analysis.Frame;
 import javassist.bytecode.analysis.FramePrinter;
 import javassist.bytecode.annotation.Annotation;
 import org.springframework.stereotype.Service;
@@ -19,15 +21,14 @@ import java.util.*;
 @Service
 public class BytecodeFlowStructureService extends EvaluatorService {
 
-    private StringBuilder sb;
 
     protected final String process(List<CtClass> classes){
-        /*// Setup some initial objects
+        // Setup some initial objects
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         PrintStream out = new PrintStream(baos, true, StandardCharsets.UTF_8);
         FramePrinter fp = new FramePrinter(out);
+        FramePrinter fpSout = new FramePrinter(System.out);
         String applicationStructureInJson = "";
-        sb = new StringBuilder();
 
         // Loop through every class in the array
         for(CtClass clazz : classes){
@@ -40,6 +41,7 @@ public class BytecodeFlowStructureService extends EvaluatorService {
                 try {
                     if(!method.getName().startsWith("get") && !method.getName().startsWith("set")) {
                         fp.print(method);
+                        //fpSout.print(method);
                     }
                 } catch (Exception e){
                     System.out.println(e.toString());
@@ -53,7 +55,7 @@ public class BytecodeFlowStructureService extends EvaluatorService {
         String bytecode = new String(baos.toByteArray(), StandardCharsets.UTF_8);
 
         // Build the structure for parsing
-        List<Node> trees = processBytecode(bytecode);
+        List<Map<Integer, Node>> trees = processBytecode(bytecode);
 
         try {
             applicationStructureInJson = new ObjectMapper().writeValueAsString(trees);
@@ -61,9 +63,8 @@ public class BytecodeFlowStructureService extends EvaluatorService {
             System.out.println(e.toString());
         }
 
-        //return applicationStructureInJson;
-        return sb.toString();*/
-        return "TODO";
+        return applicationStructureInJson;
+        //return sb.toString();
     }
 
     protected final boolean filter(CtClass clazz){
@@ -81,7 +82,7 @@ public class BytecodeFlowStructureService extends EvaluatorService {
 
     // The purpose of preprocessing is to remove any methods that are abstract or have no body and also
     // to break up each method into a separate string
-    /*private List<String> preprocessBytecode(String bytecode){
+    private List<String> preprocessBytecode(String bytecode){
         // Setup some initial strctures
         List<String> storage = new ArrayList<>();
         String currentMethod = "";
@@ -129,6 +130,15 @@ public class BytecodeFlowStructureService extends EvaluatorService {
 
         } while (line != null);
 
+        // If the current method has body add it to the structure
+        // This is in case there is a method in the pipeline
+        if(!currentMethod.equals("")) {
+            storage.add(currentMethod);
+        }
+
+        // Reset the current method
+        currentMethod = "";
+
         // This will remove any functions that have no body
         Iterator<String> it = storage.iterator();
         while (it.hasNext()) {
@@ -143,9 +153,9 @@ public class BytecodeFlowStructureService extends EvaluatorService {
     }
 
     // Processing the bytecode will create a tree of nodes that will show the flow of the nodes
-    private List<Node> processBytecode(String bytecode){
+    private List< Map<Integer, Node> > processBytecode(String bytecode){
 
-        List<Node> roots = new ArrayList<>();
+        List< Map<Integer, Node> > roots = new ArrayList<>();
 
         // Filter out garbage lines in the bytecode
         List<String> processed = preprocessBytecode(bytecode);
@@ -203,7 +213,7 @@ public class BytecodeFlowStructureService extends EvaluatorService {
                         root = current;
                     } else {
                         // If there is a currentNode then assume sequential ordering and add the new child
-                        current.addChild(node, true);
+                        current.addChild(node);
                         current = node;
                     }
                 }
@@ -218,7 +228,7 @@ public class BytecodeFlowStructureService extends EvaluatorService {
                     String[] values = entry.getValue().getRaw().split(" ");
                     Integer next = Integer.parseInt(values[2]);
                     Node n = map.get(next);
-                    entry.getValue().addChild(n, true);
+                    entry.getValue().addChild(n);
                 }
                 // If the node is a goto
                 //      break the existing condition
@@ -226,7 +236,7 @@ public class BytecodeFlowStructureService extends EvaluatorService {
                 else if (entry.getValue().getType().equals("goto")){
                     String[] values = entry.getValue().getRaw().split(" ");
 
-                    Iterator<Node> it = entry.getValue().getChildren().iterator();
+                    Iterator<Integer> it = entry.getValue().getChildren().iterator();
                     while (it.hasNext()) {
                         it.next();
                         it.remove();
@@ -234,7 +244,7 @@ public class BytecodeFlowStructureService extends EvaluatorService {
 
                     Integer next = Integer.parseInt(values[2]);
                     Node n = map.get(next);
-                    entry.getValue().addChild(n, true);
+                    entry.getValue().addChild(n);
                 }
 
             }
@@ -251,7 +261,7 @@ public class BytecodeFlowStructureService extends EvaluatorService {
 
     // Post processing is optional but will remove any filler nodes so the only ones that remain are the initial
     // instruction and any logic nodes or method call nodes
-    private Node postProcessBytecode(Map<Integer, Node> map){
+    private Map<Integer, Node> postProcessBytecode(Map<Integer, Node> map){
 
         Set<Integer> importantNodes = new HashSet<>();
         importantNodes.add(0);
@@ -272,9 +282,7 @@ public class BytecodeFlowStructureService extends EvaluatorService {
                 // Add the node
                 importantNodes.add(entry.getKey());
                 // Add the children
-                for(int i = 0; i < entry.getValue().getChildren().size(); i++){
-                    importantNodes.add(Integer.parseInt(entry.getValue().getChildren().get(i).getId()));
-                }
+                importantNodes.addAll(entry.getValue().getChildren());
             }
         }
 
@@ -289,43 +297,18 @@ public class BytecodeFlowStructureService extends EvaluatorService {
             if(!map.get(key).getType().equals("conditional") && !map.get(key).getType().equals("goto")){
                 // Clear the existing children and add the next child
                 map.get(key).setChildren(new ArrayList<>());
-                map.get(key).addChild(map.get(sortedList.get(i+1)), true);
+                map.get(key).addChild(map.get(sortedList.get(i+1)));
             }
         }
 
         // Remove any nodes from the map that aren't needed anymore
         Iterator<Integer> it = map.keySet().iterator();
-        while (it.hasNext()) {
-            Integer key = it.next();
-            if(!sortedList.contains(key)){
-                it.remove();
-            }
-        }
+        map.keySet().removeIf(e -> !sortedList.contains(e));
 
         // Sort the map
         Map<Integer, Node> sortedMap = new TreeMap<>(map);
 
-        // Print the sorted map
-        printBytecodeTree(sortedMap);
-
         // Return the first node
-        return map.get(0);
+        return sortedMap;
     }
-
-    // This will print the tree for debugging purposes
-    private void printBytecodeTree(Map<Integer, Node> map){
-
-        // Loop through every node in the map
-        for (Map.Entry<Integer, Node> entry : map.entrySet()){
-
-            // Print the node and it's raw
-            sb.append(entry.getValue().getRaw().concat("\n"));
-
-            // Print the node's children
-            for(int i = 0; i < entry.getValue().getChildren().size(); i++){
-                sb.append("\t".concat(entry.getValue().getChildren().get(i).getRaw()).concat("\n"));
-            }
-        }
-
-    }*/
 }
