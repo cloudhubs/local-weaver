@@ -21,11 +21,10 @@ import java.util.*;
 @Service
 public class BytecodeFlowStructureService extends EvaluatorService {
 
-
     protected final String process(List<CtClass> classes){
         // Setup some initial objects
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        PrintStream out = new PrintStream(baos, true, StandardCharsets.UTF_8);
+        PrintStream out = new PrintStream(baos);
         FramePrinter fp = new FramePrinter(out);
         FramePrinter fpSout = new FramePrinter(System.out);
         String applicationStructureInJson = "";

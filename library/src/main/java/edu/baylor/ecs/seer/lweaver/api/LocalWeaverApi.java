@@ -10,20 +10,20 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/local-weaver")
 public class LocalWeaverApi {
 
-    @Autowired
     private FlowStructureService flowStructureService;
-
-    @Autowired
     private BytecodeFlowStructureService bytecodeFlowStructureService;
-
-    @Autowired
     private DependencyService dependencyService;
-
-    @Autowired
     private DataModelService dataModelService;
+    private SecurityService securityService;
 
     @Autowired
-    private SecurityService securityService;
+    public LocalWeaverApi(FlowStructureService flowStructureService, BytecodeFlowStructureService bytecodeFlowStructureService, DependencyService dependencyService, DataModelService dataModelService, SecurityService securityService) {
+        this.flowStructureService = flowStructureService;
+        this.bytecodeFlowStructureService = bytecodeFlowStructureService;
+        this.dependencyService = dependencyService;
+        this.dataModelService = dataModelService;
+        this.securityService = securityService;
+    }
 
     // The flow structure endpoint generates a structure showing what methods are called by what classes and what
     // methods those methods call
