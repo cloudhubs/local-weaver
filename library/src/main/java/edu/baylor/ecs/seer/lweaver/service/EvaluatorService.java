@@ -20,13 +20,13 @@ import java.util.stream.Stream;
 public abstract class EvaluatorService {
 
     @Autowired
-    private ResourceLoader resourceLoader;
+    protected ResourceLoader resourceLoader;
 
-    private ClassPathScanner classPathScanner = new ClassPathScanner();
+    protected ClassPathScanner classPathScanner = new ClassPathScanner();
 
     public String deriveStructure(){
 
-        String directory = new File("").getAbsolutePath();
+        String directory = new File("/Users/diehl/benchmark/tx/target/").getAbsolutePath();
 
         Path start = Paths.get(directory);
         int maxDepth = 15;
