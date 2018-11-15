@@ -26,7 +26,7 @@ public abstract class EvaluatorService {
 
     public String deriveStructure(){
 
-        String directory = new File("/Users/diehl/benchmark/tx/target/").getAbsolutePath();
+        String directory = new File("").getAbsolutePath();
 
         Path start = Paths.get(directory);
         int maxDepth = 15;
