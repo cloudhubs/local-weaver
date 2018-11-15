@@ -9,6 +9,7 @@ import javassist.bytecode.AnnotationsAttribute;
 import javassist.bytecode.analysis.Frame;
 import javassist.bytecode.analysis.FramePrinter;
 import javassist.bytecode.annotation.Annotation;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.BufferedReader;
@@ -21,7 +22,10 @@ import java.util.*;
 @Service
 public class BytecodeFlowStructureService extends EvaluatorService {
 
-    protected final String process(List<CtClass> classes){
+    @Autowired
+    BytecodeFlowStructureService self;
+
+    public final String process(List<CtClass> classes){
         // Setup some initial objects
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         PrintStream out = new PrintStream(baos);
@@ -54,7 +58,7 @@ public class BytecodeFlowStructureService extends EvaluatorService {
         String bytecode = new String(baos.toByteArray(), StandardCharsets.UTF_8);
 
         // Build the structure for parsing
-        List<Map<Integer, Node>> trees = processBytecode(bytecode);
+        List<Map<Integer, Node>> trees = self.processBytecode(bytecode);
 
         try {
             applicationStructureInJson = new ObjectMapper().writeValueAsString(trees);
@@ -66,7 +70,7 @@ public class BytecodeFlowStructureService extends EvaluatorService {
         //return sb.toString();
     }
 
-    protected final boolean filter(CtClass clazz){
+    public final boolean filter(CtClass clazz){
         AnnotationsAttribute annotationsAttribute = (AnnotationsAttribute) clazz.getClassFile().getAttribute(AnnotationsAttribute.visibleTag);
         if(annotationsAttribute != null) {
             Annotation[] annotations = annotationsAttribute.getAnnotations();
@@ -81,7 +85,7 @@ public class BytecodeFlowStructureService extends EvaluatorService {
 
     // The purpose of preprocessing is to remove any methods that are abstract or have no body and also
     // to break up each method into a separate string
-    private List<String> preprocessBytecode(String bytecode){
+    public List<String> preprocessBytecode(String bytecode){
         // Setup some initial strctures
         List<String> storage = new ArrayList<>();
         String currentMethod = "";
@@ -152,12 +156,12 @@ public class BytecodeFlowStructureService extends EvaluatorService {
     }
 
     // Processing the bytecode will create a tree of nodes that will show the flow of the nodes
-    private List< Map<Integer, Node> > processBytecode(String bytecode){
+    public List< Map<Integer, Node> > processBytecode(String bytecode){
 
         List< Map<Integer, Node> > roots = new ArrayList<>();
 
         // Filter out garbage lines in the bytecode
-        List<String> processed = preprocessBytecode(bytecode);
+        List<String> processed = self.preprocessBytecode(bytecode);
 
         for(String s : processed) {
 
@@ -251,7 +255,7 @@ public class BytecodeFlowStructureService extends EvaluatorService {
             // If the tree exists then add it to the structure
             if(root != null) {
                 // Before adding it, post-process the map
-                roots.add(postProcessBytecode(map));
+                roots.add(self.postProcessBytecode(map));
             }
         }
 
@@ -260,7 +264,7 @@ public class BytecodeFlowStructureService extends EvaluatorService {
 
     // Post processing is optional but will remove any filler nodes so the only ones that remain are the initial
     // instruction and any logic nodes or method call nodes
-    private Map<Integer, Node> postProcessBytecode(Map<Integer, Node> map){
+    public Map<Integer, Node> postProcessBytecode(Map<Integer, Node> map){
 
         Set<Integer> importantNodes = new HashSet<>();
         importantNodes.add(0);
