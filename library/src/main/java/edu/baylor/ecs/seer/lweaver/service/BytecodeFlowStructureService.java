@@ -1,12 +1,10 @@
 package edu.baylor.ecs.seer.lweaver.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-//import edu.baylor.ecs.seer.cfgg.flow.Node;
-import edu.baylor.ecs.seer.lweaver.models.Node;
+import edu.baylor.ecs.seer.common.domain.FlowNode;
 import javassist.CtClass;
 import javassist.CtMethod;
 import javassist.bytecode.AnnotationsAttribute;
-import javassist.bytecode.analysis.Frame;
 import javassist.bytecode.analysis.FramePrinter;
 import javassist.bytecode.annotation.Annotation;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -58,7 +56,7 @@ public class BytecodeFlowStructureService extends EvaluatorService {
         String bytecode = new String(baos.toByteArray(), StandardCharsets.UTF_8);
 
         // Build the structure for parsing
-        List<Map<Integer, Node>> trees = self.processBytecode(bytecode);
+        List<Map<Integer, FlowNode>> trees = self.processBytecode(bytecode);
 
         try {
             applicationStructureInJson = new ObjectMapper().writeValueAsString(trees);
@@ -156,9 +154,9 @@ public class BytecodeFlowStructureService extends EvaluatorService {
     }
 
     // Processing the bytecode will create a tree of nodes that will show the flow of the nodes
-    public List< Map<Integer, Node> > processBytecode(String bytecode){
+    public List< Map<Integer, FlowNode> > processBytecode(String bytecode){
 
-        List< Map<Integer, Node> > roots = new ArrayList<>();
+        List< Map<Integer, FlowNode> > roots = new ArrayList<>();
 
         // Filter out garbage lines in the bytecode
         List<String> processed = self.preprocessBytecode(bytecode);
@@ -166,13 +164,13 @@ public class BytecodeFlowStructureService extends EvaluatorService {
         for(String s : processed) {
 
             // Initialize the map for post-processing
-            Map<Integer, Node> map = new HashMap<>();
+            Map<Integer, FlowNode> map = new HashMap<>();
 
             // Split the method bytecode string based on newlines so each command is a different index
             String[] arr = s.split("\n");
 
-            Node current = null;
-            Node root = null;
+            FlowNode current = null;
+            FlowNode root = null;
 
             // Loop through every command, skipping the method header
             for(int i = 1; i < arr.length; i++) {
@@ -201,36 +199,36 @@ public class BytecodeFlowStructureService extends EvaluatorService {
                         type = "return";
                     }
 
-                    // Create a new node with id and type
-                    Node node = new Node(id, type);
-                    // Set the node's raw data
-                    node.setRaw(line);
+                    // Create a new flowNode with id and type
+                    FlowNode flowNode = new FlowNode(id, type);
+                    // Set the flowNode's raw data
+                    flowNode.setRaw(line);
 
-                    // Put the node into the map for post-processing later
-                    map.put(Integer.parseInt(id), node);
+                    // Put the flowNode into the map for post-processing later
+                    map.put(Integer.parseInt(id), flowNode);
 
                     // If the root to this tree is null, initialize a new root
                     if (current == null) {
-                        current = node;
+                        current = flowNode;
                         // Ret the superoot
                         root = current;
                     } else {
                         // If there is a currentNode then assume sequential ordering and add the new child
-                        current.addChild(node);
-                        current = node;
+                        current.addChild(flowNode);
+                        current = flowNode;
                     }
                 }
             }
 
             // Post-Processing for building correct ordering
-            for (Map.Entry<Integer, Node> entry : map.entrySet()){
+            for (Map.Entry<Integer, FlowNode> entry : map.entrySet()){
 
                 // If the node is a conditional:
                 //      add the new child from map
                 if(entry.getValue().getType().equals("conditional")){
                     String[] values = entry.getValue().getRaw().split(" ");
                     Integer next = Integer.parseInt(values[2]);
-                    Node n = map.get(next);
+                    FlowNode n = map.get(next);
                     entry.getValue().addChild(n);
                 }
                 // If the node is a goto
@@ -246,7 +244,7 @@ public class BytecodeFlowStructureService extends EvaluatorService {
                     }
 
                     Integer next = Integer.parseInt(values[2]);
-                    Node n = map.get(next);
+                    FlowNode n = map.get(next);
                     entry.getValue().addChild(n);
                 }
 
@@ -264,13 +262,13 @@ public class BytecodeFlowStructureService extends EvaluatorService {
 
     // Post processing is optional but will remove any filler nodes so the only ones that remain are the initial
     // instruction and any logic nodes or method call nodes
-    public Map<Integer, Node> postProcessBytecode(Map<Integer, Node> map){
+    public Map<Integer, FlowNode> postProcessBytecode(Map<Integer, FlowNode> map){
 
         Set<Integer> importantNodes = new HashSet<>();
         importantNodes.add(0);
 
         // Filter out unimportant node
-        for (Map.Entry<Integer, Node> entry : map.entrySet()){
+        for (Map.Entry<Integer, FlowNode> entry : map.entrySet()){
 
             String type = entry.getValue().getType();
 
@@ -312,7 +310,7 @@ public class BytecodeFlowStructureService extends EvaluatorService {
         map.keySet().removeIf(e -> !sortedList.contains(e));
 
         // Sort the map
-        Map<Integer, Node> sortedMap = new TreeMap<>(map);
+        Map<Integer, FlowNode> sortedMap = new TreeMap<>(map);
 
         // Return the first node
         return sortedMap;
