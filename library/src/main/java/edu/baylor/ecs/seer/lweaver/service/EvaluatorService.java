@@ -20,9 +20,9 @@ import java.util.stream.Stream;
 public abstract class EvaluatorService {
 
     @Autowired
-    private ResourceLoader resourceLoader;
+    protected ResourceLoader resourceLoader;
 
-    private ClassPathScanner classPathScanner = new ClassPathScanner();
+    protected ClassPathScanner classPathScanner = new ClassPathScanner();
 
     public String deriveStructure(){
 
