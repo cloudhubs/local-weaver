@@ -18,6 +18,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.version>1.8</java.version>
+        <project.deployment.skip>false</project.deployment.skip>
     </properties>
 
     <dependencies>
@@ -73,5 +74,69 @@
         </dependency>
 
     </dependencies>
+
+
+
+
+    <build>
+        <plugins>
+            <plugin>
+                <artifactId>maven-deploy-plugin</artifactId>
+                <version>2.7</version>
+                <configuration>
+                    <skip>${project.deployment.skip}</skip>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+    <repositories>
+
+        <!--<repository>-->
+            <!--<id>central-repository</id>-->
+            <!--<name>Central Maven Repository</name>-->
+            <!--<url>http://repo2.maven.org/maven2</url>-->
+            <!--<snapshots>-->
+                <!--<enabled>false</enabled>-->
+            <!--</snapshots>-->
+        <!--</repository>-->
+
+        <repository>
+            <id>maven-group</id>
+            <url>https://seer.ecs.baylor.edu/nexus/maven-group/</url>
+        </repository>
+
+    </repositories>
+
+    <!--<pluginRepositories>-->
+
+        <!--<pluginRepository>-->
+            <!--<snapshots>-->
+                <!--<enabled>false</enabled>-->
+            <!--</snapshots>-->
+            <!--<id>plugin-repository</id>-->
+            <!--<name>Plugin Maven Repository</name>-->
+            <!--<url>http://mvnrepository.com/</url>-->
+        <!--</pluginRepository>-->
+
+    <!--</pluginRepositories>-->
+
+    <distributionManagement>
+
+        <snapshotRepository>
+            <id>nexus-snapshots</id>
+            <name>Nexus snapshots</name>
+            <url>https://seer.ecs.baylor.edu/nexus/repository/maven-snapshots/</url>
+            <layout>default</layout>
+        </snapshotRepository>
+
+        <repository>
+            <id>nexus-releases</id>
+            <name>Nexus releases</name>
+            <url>https://seer.ecs.baylor.edu/nexus/repository/maven-releases/</url>
+            <layout>default</layout>
+        </repository>
+
+    </distributionManagement>
 
 </project>
