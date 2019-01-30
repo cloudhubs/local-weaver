@@ -31,9 +31,15 @@ public class SecurityService extends EvaluatorService {
     private Map<String, Set<String>> nodes = new HashMap<>();
 
     @Override
+<<<<<<< Updated upstream
     public String deriveStructure() {
 
         String directory = new File("/Users/diehl/benchmark/tx/target/").getAbsolutePath();
+=======
+    public String deriveStructure(String filePath) {
+
+        String directory = new File(filePath).getAbsolutePath();
+>>>>>>> Stashed changes
 
         Path start = Paths.get(directory);
         int maxDepth = 15;

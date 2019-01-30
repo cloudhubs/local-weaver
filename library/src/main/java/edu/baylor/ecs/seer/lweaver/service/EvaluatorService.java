@@ -24,9 +24,9 @@ public abstract class EvaluatorService {
 
     protected ClassPathScanner classPathScanner = new ClassPathScanner();
 
-    public String deriveStructure(){
+    public String deriveStructure(String filePath){
 
-        String directory = new File("").getAbsolutePath();
+        String directory = new File(filePath).getAbsolutePath();
 
         Path start = Paths.get(directory);
         int maxDepth = 15;

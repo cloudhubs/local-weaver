@@ -1,11 +1,10 @@
 package edu.baylor.ecs.seer.lweaver.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import edu.baylor.ecs.seer.lweaver.domain.FlowStructureFilterContext;
 import javassist.CannotCompileException;
 import javassist.CtClass;
 import javassist.CtMethod;
-import javassist.bytecode.AnnotationsAttribute;
-import javassist.bytecode.annotation.Annotation;
 import javassist.expr.ExprEditor;
 import javassist.expr.MethodCall;
 import org.springframework.stereotype.Service;
@@ -75,16 +74,11 @@ public class FlowStructureService extends EvaluatorService {
     }
 
     protected final boolean filter(CtClass clazz){
-        AnnotationsAttribute annotationsAttribute = (AnnotationsAttribute) clazz.getClassFile().getAttribute(AnnotationsAttribute.visibleTag);
-        if(annotationsAttribute != null) {
-            Annotation[] annotations = annotationsAttribute.getAnnotations();
-            for (Annotation annotation : annotations) {
-                if (annotation.getTypeName().equals("org.springframework.stereotype.Service") || annotation.getTypeName().equals("org.springframework.stereotype.Component")){
-                    return true;
-                }
-            }
-        }
-        return false;
+
+        FlowStructureFilterContext filter = new FlowStructureFilterContext("Name");
+
+        return filter.doFilter(clazz);
+
     }
 
 }
