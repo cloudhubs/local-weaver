@@ -2,6 +2,7 @@ package edu.baylor.ecs.seer.lweaver.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.baylor.ecs.seer.lweaver.domain.FlowStructureFilterContext;
+import edu.baylor.ecs.seer.lweaver.domain.FlowStructureFilterNameStrategy;
 import javassist.CannotCompileException;
 import javassist.CtClass;
 import javassist.CtMethod;
@@ -75,7 +76,8 @@ public class FlowStructureService extends EvaluatorService {
 
     protected final boolean filter(CtClass clazz){
 
-        FlowStructureFilterContext filter = new FlowStructureFilterContext("Name");
+        FlowStructureFilterContext filter =
+                new FlowStructureFilterContext(new FlowStructureFilterNameStrategy());
 
         return filter.doFilter(clazz);
 
