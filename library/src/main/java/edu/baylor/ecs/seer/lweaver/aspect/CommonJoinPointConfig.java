@@ -4,12 +4,9 @@ import org.aspectj.lang.annotation.Pointcut;
 
 public class CommonJoinPointConfig {
 
-<<<<<<< Updated upstream
-=======
     @Pointcut("execution(* edu.baylor.ecs.seer.lweaver.*.*.*(..))")
     public void allMethods(){}
 
->>>>>>> Stashed changes
     @Pointcut("execution(* edu.baylor.ecs.seer.lweaver.api.LocalWeaverApi.*(..))")
     public void apiCall(){}
 

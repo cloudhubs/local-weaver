@@ -1,6 +1,6 @@
 package edu.baylor.ecs.seer.lweaver.aspect;
 
-import edu.baylor.ecs.seer.common.domain.FlowNode;
+import edu.baylor.ecs.seer.common.FlowNode;
 import javassist.CtClass;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.ProceedingJoinPoint;

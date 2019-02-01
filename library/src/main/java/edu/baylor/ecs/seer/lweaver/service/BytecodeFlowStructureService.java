@@ -1,7 +1,7 @@
 package edu.baylor.ecs.seer.lweaver.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import edu.baylor.ecs.seer.common.domain.FlowNode;
+import edu.baylor.ecs.seer.common.FlowNode;
 import javassist.CtClass;
 import javassist.CtMethod;
 import javassist.bytecode.AnnotationsAttribute;

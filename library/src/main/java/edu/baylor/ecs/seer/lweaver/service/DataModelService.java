@@ -1,8 +1,8 @@
 package edu.baylor.ecs.seer.lweaver.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import edu.baylor.ecs.seer.common.domain.EntityModel;
-import edu.baylor.ecs.seer.common.domain.InstanceVariableModel;
+import edu.baylor.ecs.seer.common.EntityModel;
+import edu.baylor.ecs.seer.common.InstanceVariableModel;
 import javassist.CtClass;
 import javassist.CtField;
 import javassist.bytecode.AnnotationsAttribute;
@@ -15,7 +15,7 @@ import java.util.*;
 @Service
 public class DataModelService extends EvaluatorService {
 
-    protected final String process(List<CtClass> entityClasses) {
+    public String process(List<CtClass> entityClasses) {
 
         // Establish the list of entities
         List<EntityModel> entities = new ArrayList<>();
