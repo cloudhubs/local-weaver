@@ -1,6 +1,8 @@
 package edu.baylor.ecs.seer.lweaver.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import edu.baylor.ecs.seer.lweaver.domain.SecurityFilterContext;
+import edu.baylor.ecs.seer.lweaver.domain.SecurityFilterGeneralAnnotationStrategy;
 import javassist.CannotCompileException;
 import javassist.ClassPool;
 import javassist.CtClass;
@@ -30,11 +32,12 @@ public class SecurityService extends EvaluatorService {
     private Map<String, Set<String>> roles = new HashMap<>();
     private Map<String, Set<String>> nodes = new HashMap<>();
 
+    @Override
+
     public String deriveStructure(String filePath) {
 
 
         String directory = new File(filePath).getAbsolutePath();
-
 
         Path start = Paths.get(directory);
         int maxDepth = 15;
@@ -121,111 +124,11 @@ public class SecurityService extends EvaluatorService {
     // lists of CtClass objects by role. This filter function will be used to cache the classes in a private map
     // which will then be used in process
     protected final boolean filter(CtClass clazz) {
-        AnnotationsAttribute annotationsAttribute = (AnnotationsAttribute) clazz.getClassFile().getAttribute(AnnotationsAttribute.visibleTag);
-        if(annotationsAttribute != null) {
-            Annotation[] classAnnotations = annotationsAttribute.getAnnotations();
-            Annotation[] methodAnnotations = null;
-            Annotation[] ifcMethodAnnotations = null;
-            ArrayList<Annotation> allMethodAnnotations = new ArrayList<>();
 
-            List<String> defaultPerms = new ArrayList<>();
-            for (Annotation annotation : classAnnotations) {
-                if (annotation.getTypeName().equals("javax.annotation.security.RolesAllowed")) {
-                    Set<String> names = annotation.getMemberNames();
-                    for (String name : names) {
-                        MemberValue value = annotation.getMemberValue(name);
-                        if (value instanceof ArrayMemberValue) {
-                            ArrayMemberValue amv = (ArrayMemberValue)value;
-                            MemberValue[] memberValues = amv.getValue();
-                            for (MemberValue mv : memberValues) {
-                                String val = mv.toString().replace("\"", "");
-                                defaultPerms.add(val);
-                            }
-                        }
-                    }
-                }
-            }
+        SecurityFilterContext context =
+                new SecurityFilterContext(new SecurityFilterGeneralAnnotationStrategy());
 
-            try {
-                for (CtMethod method : clazz.getDeclaredMethods()) {
-                    CtMethod tempMethod = null;
-                    MethodInfo methodInfo = method.getMethodInfo();
-                    AnnotationsAttribute attr = (AnnotationsAttribute) methodInfo.getAttribute(AnnotationsAttribute.visibleTag);
-                    if (attr != null) {
-                        methodAnnotations = attr.getAnnotations();
-                        allMethodAnnotations.addAll(Arrays.asList(methodAnnotations));
-                        CtClass[] ifcs = clazz.getInterfaces();
-                        for ( CtClass ifc : ifcs ) {
-                            for ( CtMethod meth : ifc.getDeclaredMethods() ) {
-                                if (meth.getName().equals(method.getName())) {
-                                    tempMethod = meth;
-                                    AnnotationsAttribute attribute = (AnnotationsAttribute) meth.getMethodInfo()
-                                            .getAttribute(AnnotationsAttribute.visibleTag);
-                                    if (attribute != null) {
-                                        ifcMethodAnnotations = attribute.getAnnotations();
-                                        allMethodAnnotations.addAll(Arrays.asList(ifcMethodAnnotations));
-                                    }
-                                    break;
-                                }
-                            }
-                        }
-                        CtMethod modMethod = tempMethod == null ? method : tempMethod;
+        return context.doFilter(clazz, roles, nodes);
 
-                        nodes.put(modMethod.getLongName(), new HashSet<>());
-                        roles.put(modMethod.getLongName(), new HashSet<>());
-                        for (Annotation annotation : allMethodAnnotations) {
-                            if (annotation.getTypeName().equals("javax.annotation.security.RolesAllowed")) {
-                                Set<String> names = annotation.getMemberNames();
-                                for (String name : names) {
-                                    MemberValue value = annotation.getMemberValue(name);
-                                    if (value instanceof ArrayMemberValue) {
-                                        ArrayMemberValue amv = (ArrayMemberValue) value;
-                                        MemberValue[] memberValues = amv.getValue();
-                                        for (MemberValue mv : memberValues) {
-                                            String val = mv.toString().replace("\"", "");
-                                            roles.get(modMethod.getLongName()).add(val);
-                                        }
-                                    }
-                                }
-                            } else if (annotation.getTypeName().equals("javax.annotation.security.PermitAll")) {
-                                if (defaultPerms.size() > 0) {
-                                    roles.get(modMethod.getLongName()).addAll(defaultPerms);
-                                } else {
-                                    roles.get(modMethod.getLongName()).add("SEER_DEFAULT_ALL_ROLES_PERMITTED");
-                                }
-                            }
-
-                            if (annotation.getTypeName().equals("javax.annotation.security.RolesAllowed") ||
-                                    annotation.getTypeName().equals("javax.annotation.security.PermitAll")) {
-                                try {
-                                    method.instrument(
-                                            new ExprEditor() {
-                                                public void edit(MethodCall m) {
-                                                    Set<String> subMethodList = nodes.get(modMethod.getLongName());
-
-                                                    CtMethod ctMethod;
-                                                    try {
-                                                        ctMethod = m.getMethod();
-                                                    } catch (Exception ex) {
-                                                        return;
-                                                    }
-
-                                                    subMethodList.add(ctMethod.getLongName());
-                                                }
-                                            }
-                                    );
-                                } catch (CannotCompileException cex) {
-                                    System.out.println(cex.toString());
-                                    return false;
-                                }
-                            }
-                        }
-                    }
-                }
-            } catch (Exception ex ) {
-                return false;
-            }
-        }
-        return true;
     }
 }
