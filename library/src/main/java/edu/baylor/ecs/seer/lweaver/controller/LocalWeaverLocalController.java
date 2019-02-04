@@ -1,4 +1,4 @@
-package edu.baylor.ecs.seer.lweaver.api;
+package edu.baylor.ecs.seer.lweaver.controller;
 
 import edu.baylor.ecs.seer.lweaver.service.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,8 +8,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/local-weaver")
-public class LocalWeaverApi {
+@RequestMapping("/local-weaver/local")
+public class LocalWeaverLocalController {
 
     private FlowStructureService flowStructureService;
     private BytecodeFlowStructureService bytecodeFlowStructureService;
@@ -27,7 +27,7 @@ public class LocalWeaverApi {
     }
 
     @Autowired
-    public LocalWeaverApi(FlowStructureService flowStructureService, BytecodeFlowStructureService bytecodeFlowStructureService, DependencyService dependencyService, DataModelService dataModelService, SecurityService securityService) {
+    public LocalWeaverLocalController(FlowStructureService flowStructureService, BytecodeFlowStructureService bytecodeFlowStructureService, DependencyService dependencyService, DataModelService dataModelService, SecurityService securityService) {
         this.flowStructureService = flowStructureService;
         this.bytecodeFlowStructureService = bytecodeFlowStructureService;
         this.dependencyService = dependencyService;
@@ -53,8 +53,6 @@ public class LocalWeaverApi {
 
     // The bytecode flow structure endpoint generates a structure of bytecode instructions as a tree, filtering out
     // the unnecessary ones to be used to analyze if and for cycles
-
-
     @RequestMapping(value = "/bytecodeFlowStructure/{path}")
     @GetMapping
     public String generateBytecodeFlowStructure(@PathVariable String path) {
@@ -64,7 +62,6 @@ public class LocalWeaverApi {
 
     // The dependency endpoint generates a list of what outside packages are used and how many times they are used in
     // the application
-
     @RequestMapping(value = "/dependency/{path}")
     @GetMapping
     public String generateDependencyStructure(@PathVariable String path) {
@@ -74,7 +71,6 @@ public class LocalWeaverApi {
 
     // The data model endpoint generates a structure of entity objects and their member variables along with the
     // annotation values on those member variables
-
     @RequestMapping(value = "/dataModel/{path}")
     @GetMapping
     public String generateDataModelStructure(@PathVariable String path) {
