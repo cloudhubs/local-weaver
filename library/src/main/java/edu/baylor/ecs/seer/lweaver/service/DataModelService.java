@@ -1,8 +1,8 @@
 package edu.baylor.ecs.seer.lweaver.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import edu.baylor.ecs.seer.common.EntityModel;
-import edu.baylor.ecs.seer.common.InstanceVariableModel;
+import edu.baylor.ecs.seer.common.entity.EntityModel;
+import edu.baylor.ecs.seer.common.entity.InstanceVariableModel;
 import javassist.CtClass;
 import javassist.CtField;
 import javassist.bytecode.AnnotationsAttribute;

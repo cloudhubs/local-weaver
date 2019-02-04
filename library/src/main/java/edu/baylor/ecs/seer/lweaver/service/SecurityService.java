@@ -1,20 +1,13 @@
 package edu.baylor.ecs.seer.lweaver.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import edu.baylor.ecs.seer.common.context.SeerContext;
+import edu.baylor.ecs.seer.common.context.SeerMsContext;
+import edu.baylor.ecs.seer.common.security.SecurityMethod;
 import edu.baylor.ecs.seer.lweaver.domain.SecurityFilterContext;
 import edu.baylor.ecs.seer.lweaver.domain.SecurityFilterGeneralAnnotationStrategy;
-import javassist.CannotCompileException;
 import javassist.ClassPool;
 import javassist.CtClass;
-import javassist.CtMethod;
-import javassist.bytecode.AnnotationsAttribute;
 import javassist.bytecode.ClassFile;
-import javassist.bytecode.MethodInfo;
-import javassist.bytecode.annotation.Annotation;
-import javassist.bytecode.annotation.ArrayMemberValue;
-import javassist.bytecode.annotation.MemberValue;
-import javassist.expr.ExprEditor;
-import javassist.expr.MethodCall;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 
@@ -29,15 +22,17 @@ import java.util.stream.Stream;
 @Service
 public class SecurityService extends EvaluatorService {
 
-    private Map<String, Set<String>> roles = new HashMap<>();
-    private Map<String, Set<String>> nodes = new HashMap<>();
+    private List<SecurityMethod> methods = new ArrayList<>();
 
     @Override
 
-    public String deriveStructure(String filePath) {
+    public SeerContext deriveStructure(SeerContext context) {
 
 
-        String directory = new File(filePath).getAbsolutePath();
+        String directory = new File(context
+                                    .getRequest()
+                                    .getPathToCompiledMicroservices()
+                                    ).getAbsolutePath();
 
         Path start = Paths.get(directory);
         int maxDepth = 15;
@@ -100,10 +95,19 @@ public class SecurityService extends EvaluatorService {
             }
         }
 
-        return process(filtered);
+        return process(filtered, context);
     }
 
-    protected final String process(List<CtClass> classes){
+    protected final SeerContext process(List<CtClass> classes, SeerContext context){
+        // TODO: add support to modify context and add the methods set
+        // Note: this is a temporary solution, as it adds all data to all MS
+        for (SeerMsContext seerMsContext : context.getMsContext()) {
+            // TODO: get the security context and modify it
+        }
+
+        return context;
+
+        /* deprecated
         // Setup the return string
         String applicationStructureInJson = "";
 
@@ -118,6 +122,7 @@ public class SecurityService extends EvaluatorService {
         }
 
         return applicationStructureInJson;
+        */
     }
 
     // This filter will be slightly different than the others in that we want to break up the sorting into multiple
@@ -125,10 +130,10 @@ public class SecurityService extends EvaluatorService {
     // which will then be used in process
     protected final boolean filter(CtClass clazz) {
 
-        SecurityFilterContext context =
+        SecurityFilterContext securityFilterContext =
                 new SecurityFilterContext(new SecurityFilterGeneralAnnotationStrategy());
 
-        return context.doFilter(clazz, roles, nodes);
+        return securityFilterContext.doFilter(clazz, methods);
 
     }
 }

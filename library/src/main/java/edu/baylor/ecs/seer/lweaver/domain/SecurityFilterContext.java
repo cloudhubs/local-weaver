@@ -1,7 +1,9 @@
 package edu.baylor.ecs.seer.lweaver.domain;
 
+import edu.baylor.ecs.seer.common.security.SecurityMethod;
 import javassist.CtClass;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -14,9 +16,8 @@ public class SecurityFilterContext {
     }
 
     public boolean doFilter(CtClass clazz,
-                            Map<String, Set<String>> roles,
-                            Map<String, Set<String>> nodes) {
-        return strategy.doFilter(clazz, roles, nodes);
+                            List<SecurityMethod> methods) {
+        return strategy.doFilter(clazz, methods);
     }
 
 }

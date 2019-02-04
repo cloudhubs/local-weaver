@@ -1,5 +1,6 @@
 package edu.baylor.ecs.seer.lweaver.service;
 
+import edu.baylor.ecs.seer.common.context.SeerContext;
 import javassist.*;
 import javassist.bytecode.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,9 +25,12 @@ public abstract class EvaluatorService {
 
     protected ClassPathScanner classPathScanner = new ClassPathScanner();
 
-    public String deriveStructure(String filePath){
+    public SeerContext deriveStructure(SeerContext context){
 
-        String directory = new File(filePath).getAbsolutePath();
+        String directory = new File(context
+                                    .getRequest()
+                                    .getPathToCompiledMicroservices()
+                                    ).getAbsolutePath();
 
         Path start = Paths.get(directory);
         int maxDepth = 15;
@@ -85,10 +89,10 @@ public abstract class EvaluatorService {
             }
         }
 
-        return process(classes);
+        return process(classes, context);
     }
 
-    protected abstract String process(List<CtClass> classes);
+    protected abstract SeerContext process(List<CtClass> classes, SeerContext context);
     protected abstract boolean filter(CtClass clazz);
 
 }

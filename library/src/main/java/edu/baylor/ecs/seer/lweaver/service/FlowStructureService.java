@@ -1,6 +1,7 @@
 package edu.baylor.ecs.seer.lweaver.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import edu.baylor.ecs.seer.common.context.SeerContext;
 import edu.baylor.ecs.seer.lweaver.domain.FlowStructureFilterContext;
 import edu.baylor.ecs.seer.lweaver.domain.FlowStructureFilterNameStrategy;
 import javassist.CannotCompileException;
@@ -18,7 +19,7 @@ import java.util.Map;
 @Service
 public class FlowStructureService extends EvaluatorService {
 
-    protected final String process(List<CtClass> classes){
+    protected final SeerContext process(List<CtClass> classes, SeerContext context){
         // Setup some initial objects
         Map<List<String>, List<List<String>>> formattedMap = new HashMap<>();
         String applicationStructureInJson = "";
@@ -71,7 +72,9 @@ public class FlowStructureService extends EvaluatorService {
             System.out.println(e.toString());
         }
 
-        return applicationStructureInJson;
+        return context; // temporary, must implement use of context
+        // deprecated
+        //return applicationStructureInJson;
     }
 
     protected final boolean filter(CtClass clazz){

@@ -1,5 +1,7 @@
 package edu.baylor.ecs.seer.lweaver.domain;
 
+import edu.baylor.ecs.seer.common.security.SecurityMethod;
+import edu.baylor.ecs.seer.common.security.SecurityRole;
 import javassist.CannotCompileException;
 import javassist.CtClass;
 import javassist.CtMethod;
@@ -16,8 +18,7 @@ import java.util.*;
 public class SecurityFilterGeneralAnnotationStrategy implements SecurityFilterStrategy {
     @Override
     public boolean doFilter(CtClass clazz,
-                            Map<String, Set<String>> roles,
-                            Map<String, Set<String>> nodes) {
+                            List<SecurityMethod> methods) {
         AnnotationsAttribute annotationsAttribute =
                 (AnnotationsAttribute) clazz.getClassFile().getAttribute(AnnotationsAttribute.visibleTag);
         if(annotationsAttribute != null) {
@@ -54,8 +55,10 @@ public class SecurityFilterGeneralAnnotationStrategy implements SecurityFilterSt
                         }
                         CtMethod modMethod = tempMethod == null ? method : tempMethod;
 
-                        nodes.put(modMethod.getLongName(), new HashSet<>());
-                        roles.put(modMethod.getLongName(), new HashSet<>());
+                        if (methods.stream().noneMatch(x -> x.getMethodName().equals(modMethod.getLongName()))) {
+                            methods.add(new SecurityMethod(modMethod.getLongName()));
+                        }
+
                         for (Annotation annotation : allMethodAnnotations) {
                             if (annotation.getTypeName().equals("javax.annotation.security.RolesAllowed")) {
                                 Set<String> names = annotation.getMemberNames();
@@ -66,15 +69,35 @@ public class SecurityFilterGeneralAnnotationStrategy implements SecurityFilterSt
                                         MemberValue[] memberValues = amv.getValue();
                                         for (MemberValue mv : memberValues) {
                                             String val = mv.toString().replace("\"", "");
-                                            roles.get(modMethod.getLongName()).add(val);
+                                            methods
+                                                    .stream()
+                                                    .filter(x -> x.getMethodName().equals(modMethod.getLongName()))
+                                                    .findFirst()
+                                                    .get()
+                                                    .getMethodRoles()
+                                                    .add(new SecurityRole(val));
                                         }
                                     }
                                 }
                             } else if (annotation.getTypeName().equals("javax.annotation.security.PermitAll")) {
                                 if (defaultPerms.size() > 0) {
-                                    roles.get(modMethod.getLongName()).addAll(defaultPerms);
+                                    for (String perm : defaultPerms) {
+                                        methods
+                                                .stream()
+                                                .filter(x -> x.getMethodName().equals(modMethod.getLongName()))
+                                                .findFirst()
+                                                .get()
+                                                .getMethodRoles()
+                                                .add(new SecurityRole(perm));
+                                    }
                                 } else {
-                                    roles.get(modMethod.getLongName()).add("SEER_DEFAULT_ALL_ROLES_PERMITTED");
+                                    methods
+                                            .stream()
+                                            .filter(x -> x.getMethodName().equals(modMethod.getLongName()))
+                                            .findFirst()
+                                            .get()
+                                            .getMethodRoles()
+                                            .add(new SecurityRole("SEER_DEFAULT_ALL_ROLES_PERMITTED"));
                                 }
                             }
 
@@ -84,7 +107,12 @@ public class SecurityFilterGeneralAnnotationStrategy implements SecurityFilterSt
                                     method.instrument(
                                             new ExprEditor() {
                                                 public void edit(MethodCall m) {
-                                                    Set<String> subMethodList = nodes.get(modMethod.getLongName());
+                                                    Set<SecurityMethod> subMethodList = methods
+                                                            .stream()
+                                                            .filter(x -> x.getMethodName().equals(modMethod.getLongName()))
+                                                            .findFirst()
+                                                            .get()
+                                                            .getChildMethods();
 
                                                     CtMethod ctMethod;
                                                     try {
@@ -93,7 +121,23 @@ public class SecurityFilterGeneralAnnotationStrategy implements SecurityFilterSt
                                                         return;
                                                     }
 
-                                                    subMethodList.add(ctMethod.getLongName());
+                                                    if (methods
+                                                            .stream()
+                                                            .anyMatch(x -> x.getMethodName()
+                                                                    .equals(ctMethod.getLongName()))) {
+                                                        subMethodList.add(methods
+                                                                            .stream()
+                                                                            .filter(x -> x.getMethodName()
+                                                                                    .equals(ctMethod.getLongName()))
+                                                                            .findFirst()
+                                                                            .get());
+                                                    }
+                                                    else {
+                                                        SecurityMethod securityMethod =
+                                                                new SecurityMethod(ctMethod.getLongName());
+                                                        methods.add(securityMethod);
+                                                        subMethodList.add(securityMethod);
+                                                    }
                                                 }
                                             }
                                     );
