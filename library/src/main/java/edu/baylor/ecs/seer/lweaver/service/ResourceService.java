@@ -5,11 +5,15 @@ import edu.baylor.ecs.seer.common.context.SeerMsContext;
 import edu.baylor.ecs.seer.common.context.SeerRequestContext;
 import javassist.CtClass;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
+import javassist.*;
+import javassist.bytecode.*;
 @Service
 public class ResourceService {
 
@@ -36,17 +40,17 @@ public class ResourceService {
         for (String path: resourcePaths
              ) {
             SeerMsContext msContext = new SeerMsContext();
-            List<CtClass> msCtClasses = getMsCtClasses(path);
-            msContext.setCtClassesResourcePool(msCtClasses);
-            msContext.setEntity(entityService.getSeerEntityContext(msCtClasses));
-            msContext.setSecurity(securityService.getMsSeerSecurityContext(msCtClasses));
+            Set<ClassFile> msClassFiles = getMsClassFiles(path);
+            msContext.setEntity(entityService.getSeerEntityContext(msClassFiles));
+            msContext.setSecurity(securityService.getMsSeerSecurityContext(msClassFiles));
             msContexts.add(msContext);
         }
         return msContexts;
     }
 
-    private List<CtClass> getMsCtClasses(String resourcePath){
-        //ToDo:
-        return null;
+
+
+    private Set<ClassFile> getMsClassFiles(String path){
+        //ToDo: Get Resource
     }
 }
