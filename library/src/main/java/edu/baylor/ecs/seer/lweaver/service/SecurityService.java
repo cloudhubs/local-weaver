@@ -2,6 +2,7 @@ package edu.baylor.ecs.seer.lweaver.service;
 
 import edu.baylor.ecs.seer.common.context.SeerContext;
 import edu.baylor.ecs.seer.common.context.SeerMsContext;
+import edu.baylor.ecs.seer.common.context.SeerSecurityContext;
 import edu.baylor.ecs.seer.common.security.SecurityMethod;
 import edu.baylor.ecs.seer.lweaver.domain.SecurityFilterContext;
 import edu.baylor.ecs.seer.lweaver.domain.SecurityFilterGeneralAnnotationStrategy;
@@ -98,10 +99,20 @@ public class SecurityService extends EvaluatorService {
         return process(filtered, context);
     }
 
+    SeerSecurityContext getMsSeerSecurityContext(List<CtClass> classes) {
+        SeerSecurityContext seerSecurityContext = new SeerSecurityContext();
+
+        for (CtClass clazz : classes) {
+            if (filter(clazz)) {
+
+            }
+        }
+    }
+
     protected final SeerContext process(List<CtClass> classes, SeerContext context){
         // TODO: add support to modify context and add the methods set
         // Note: this is a temporary solution, as it adds all data to all MS
-        for (SeerMsContext seerMsContext : context.getMsContext()) {
+        for (SeerMsContext seerMsContext : context.getMsContexts()) {
             // TODO: get the security context and modify it
         }
 
