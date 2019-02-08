@@ -4,31 +4,23 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.baylor.ecs.seer.common.context.SeerEntityContext;
 import edu.baylor.ecs.seer.common.entity.EntityModel;
 import edu.baylor.ecs.seer.common.entity.InstanceVariableModel;
-import javassist.ClassPool;
 import javassist.CtClass;
 import javassist.CtField;
 import javassist.bytecode.AnnotationsAttribute;
-import javassist.bytecode.ClassFile;
 import javassist.bytecode.annotation.Annotation;
 import javassist.bytecode.annotation.MemberValue;
-import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
-
-
 @Service
 public class SeerMsEntityContextService {
 
-    public SeerEntityContext getSeerEntityContext(Set<ClassFile> msClassFiles){
+    public SeerEntityContext getSeerEntityContext(List<CtClass> entityClasses){
         // Establish the list of entities
         List<EntityModel> entities = new ArrayList<>();
-
-        List<CtClass> entityClasses = getEntityCtClasses(msClassFiles);
 
         // Loop through every class
         for(CtClass clazz : entityClasses){
@@ -72,26 +64,17 @@ public class SeerMsEntityContextService {
 
                     }
                 }
-
                 // Add the field to the entity
                 entityModel.addInstanceVariableModel(instanceVariableModel);
             }
-
             // Add the entity to the list
             entities.add(entityModel);
-
-        }
-
-        // Convert the list of entities into JSON
-        String inJson = "";
-        try {
-            inJson = new ObjectMapper().writeValueAsString(entities);
-        } catch (Exception e){
-            System.out.println(e.toString());
         }
 
         // Return the list of entities as JSON
-        return null;
+        SeerEntityContext seerEntityContext = new SeerEntityContext();
+        seerEntityContext.setEntities(entities);
+        return seerEntityContext;
     }
 
     protected final boolean filter(CtClass clazz){
@@ -105,24 +88,5 @@ public class SeerMsEntityContextService {
             }
         }
         return false;
-    }
-
-    private List<CtClass> getEntityCtClasses(Set<ClassFile> classFileSet){
-        List<CtClass> classes = new ArrayList<>();
-        ClassPool cp = ClassPool.getDefault();
-        for(ClassFile classFile : classFileSet){
-            CtClass clazz = null;
-            try {
-                clazz = cp.makeClass(classFile);
-            } catch (Exception e){
-                System.out.println("Failed to make class:" + e.toString());
-                break;
-            }
-
-            if(filter(clazz)){
-                classes.add(clazz);
-            }
-        }
-        return classes;
     }
 }

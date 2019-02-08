@@ -1,5 +1,6 @@
 package edu.baylor.ecs.seer.lweaver.app;
 
+import edu.baylor.ecs.seer.lweaver.service.SeerMsSecurityContextService;
 import edu.baylor.ecs.seer.lweaver.service.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;

@@ -17,6 +17,9 @@ import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
+/**
+ * @Deprecated
+ */
 @Service
 public class ClassPathScanner {
 

@@ -2,8 +2,6 @@ package edu.baylor.ecs.seer.lweaver.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.baylor.ecs.seer.common.context.SeerContext;
-import edu.baylor.ecs.seer.lweaver.domain.FlowStructureFilterContext;
-import edu.baylor.ecs.seer.lweaver.domain.FlowStructureFilterNameStrategy;
 import javassist.CannotCompileException;
 import javassist.CtClass;
 import javassist.CtMethod;
@@ -16,6 +14,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Generates flow
+ */
 @Service
 public class FlowStructureService extends EvaluatorService {
 

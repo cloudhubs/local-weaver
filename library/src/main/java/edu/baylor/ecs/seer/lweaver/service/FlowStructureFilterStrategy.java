@@ -1,4 +1,4 @@
-package edu.baylor.ecs.seer.lweaver.domain;
+package edu.baylor.ecs.seer.lweaver.service;
 
 import javassist.CtClass;
 

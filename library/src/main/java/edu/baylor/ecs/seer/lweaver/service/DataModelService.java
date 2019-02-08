@@ -12,8 +12,9 @@ import org.springframework.stereotype.Service;
 
 import java.util.*;
 
+/** Deprecated **/
 @Service
-public class DataModelService extends EvaluatorService {
+public class DataModelService {
 
     public String process(List<CtClass> entityClasses) {
 

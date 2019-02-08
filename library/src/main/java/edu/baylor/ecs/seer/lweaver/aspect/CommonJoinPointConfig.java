@@ -7,7 +7,7 @@ public class CommonJoinPointConfig {
     @Pointcut("execution(* edu.baylor.ecs.seer.lweaver.*.*.*(..))")
     public void allMethods(){}
 
-    @Pointcut("execution(* edu.baylor.ecs.seer.lweaver.controller.LocalWeaverLocalController.*(..))")
+    @Pointcut("execution(* edu.baylor.ecs.seer.lweaver.resource.*(..))")
     public void apiCall(){}
 
     @Pointcut("execution(* edu.baylor.ecs.seer.lweaver.service.BytecodeFlowStructureService.filter(..))")

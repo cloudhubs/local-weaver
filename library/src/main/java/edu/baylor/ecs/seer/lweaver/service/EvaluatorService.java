@@ -27,6 +27,7 @@ public abstract class EvaluatorService {
 
     public SeerContext deriveStructure(SeerContext context){
 
+        /* */
         String directory = new File(context
                                     .getRequest()
                                     .getPathToCompiledMicroservices()
@@ -55,12 +56,15 @@ public abstract class EvaluatorService {
 
         System.out.println(fileNames);
 
+        /* resource */
         List<Resource> resources = new ArrayList<>();
         for(String file : fileNames){
             Resource classPathResource = resourceLoader.getResource("file:" + file);
             resources.add(classPathResource);
         }
+        /* get resource*/
 
+        /* class file set - not for all resources - single resource */
         Set<ClassFile> classFileSet = new HashSet<>();
         for(Resource resource : resources){
             try{
@@ -70,7 +74,9 @@ public abstract class EvaluatorService {
                 System.out.println("IOException: " + e.toString());
             }
         }
+        /* class file set */
 
+        /* START Get CtClasses */
         ClassPool cp = ClassPool.getDefault();
         List<CtClass> classes = new ArrayList<>();
 
@@ -88,7 +94,7 @@ public abstract class EvaluatorService {
                 classes.add(clazz);
             }
         }
-
+        /* END Get CtClasses */
         return process(classes, context);
     }
 

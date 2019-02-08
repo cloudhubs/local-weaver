@@ -1,4 +1,4 @@
-package edu.baylor.ecs.seer.lweaver.domain;
+package edu.baylor.ecs.seer.lweaver.service;
 
 import edu.baylor.ecs.seer.common.security.SecurityMethod;
 import edu.baylor.ecs.seer.common.security.SecurityRole;
@@ -16,6 +16,8 @@ import javassist.expr.MethodCall;
 import java.util.*;
 
 public class SecurityFilterGeneralAnnotationStrategy implements SecurityFilterStrategy {
+
+    /*getSecurityMethods*/
     @Override
     public boolean doFilter(CtClass clazz,
                             Set<SecurityMethod> methods) {
@@ -175,5 +177,8 @@ public class SecurityFilterGeneralAnnotationStrategy implements SecurityFilterSt
             }
         }
         return defaultPerms;
+    }
+
+    public SecurityFilterGeneralAnnotationStrategy() {
     }
 }

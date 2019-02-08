@@ -17,8 +17,11 @@ import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
+/**
+ *
+ */
 @Service
-public class BytecodeFlowStructureService extends EvaluatorService {
+public class BytecodeFlowStructureService {
 
     @Autowired
     BytecodeFlowStructureService self;
