@@ -1,5 +1,6 @@
 package edu.baylor.ecs.seer.lweaver.service.adapter;
 
+import edu.baylor.ecs.seer.common.context.SeerContext;
 import edu.baylor.ecs.seer.lweaver.service.EvaluatorService;
 
 public class RemoteEvaluatorServiceAdapter {
@@ -10,8 +11,15 @@ public class RemoteEvaluatorServiceAdapter {
         this.service = service;
     }
 
-    public String deriveStructure() {
-        return service.deriveStructure("");
+    public SeerContext deriveStructure(SeerContext context) {
+        String oldPath = context.getRequest().getPathToCompiledMicroservices();
+        context.getRequest().setPathToCompiledMicroservices("");
+
+        context = service.deriveStructure(context);
+
+        context.getRequest().setPathToCompiledMicroservices(oldPath);
+
+        return context;
     }
 
 }
