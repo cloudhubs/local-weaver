@@ -11,7 +11,6 @@ import javassist.bytecode.AnnotationsAttribute;
 import javassist.bytecode.ClassFile;
 import javassist.bytecode.annotation.Annotation;
 import javassist.bytecode.annotation.MemberValue;
-import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -28,7 +27,7 @@ public class SeerMsEntityContextService {
         // Establish the list of entities
         List<EntityModel> entities = new ArrayList<>();
 
-        List<CtClass> entityClasses = getEntityCtClasses(msClassFiles);
+        List<CtClass> entityClasses = convertClassFileSetToCtClasses(msClassFiles);
 
         // Loop through every class
         for(CtClass clazz : entityClasses){
@@ -79,22 +78,15 @@ public class SeerMsEntityContextService {
 
             // Add the entity to the list
             entities.add(entityModel);
-
         }
 
-        // Convert the list of entities into JSON
-        String inJson = "";
-        try {
-            inJson = new ObjectMapper().writeValueAsString(entities);
-        } catch (Exception e){
-            System.out.println(e.toString());
-        }
+        SeerEntityContext seerEntityContext = new SeerEntityContext();
+        seerEntityContext.setEntities(entities);
 
-        // Return the list of entities as JSON
-        return null;
+        return seerEntityContext;
     }
 
-    protected final boolean filter(CtClass clazz){
+    protected final boolean isCtClassEntityClass(CtClass clazz){
         AnnotationsAttribute annotationsAttribute = (AnnotationsAttribute) clazz.getClassFile().getAttribute(AnnotationsAttribute.visibleTag);
         if(annotationsAttribute != null) {
             Annotation[] annotations = annotationsAttribute.getAnnotations();
@@ -107,20 +99,25 @@ public class SeerMsEntityContextService {
         return false;
     }
 
-    private List<CtClass> getEntityCtClasses(Set<ClassFile> classFileSet){
+    /**
+     *
+     * Converts classFileSetToCtClasses
+     * @param classFileSet
+     * @return
+     */
+    private List<CtClass> convertClassFileSetToCtClasses(Set<ClassFile> classFileSet){
         List<CtClass> classes = new ArrayList<>();
         ClassPool cp = ClassPool.getDefault();
         for(ClassFile classFile : classFileSet){
-            CtClass clazz = null;
+            CtClass ctClass = null;
             try {
-                clazz = cp.makeClass(classFile);
+                ctClass = cp.makeClass(classFile);
             } catch (Exception e){
                 System.out.println("Failed to make class:" + e.toString());
                 break;
             }
-
-            if(filter(clazz)){
-                classes.add(clazz);
+            if(isCtClassEntityClass(ctClass)){
+                classes.add(ctClass);
             }
         }
         return classes;
