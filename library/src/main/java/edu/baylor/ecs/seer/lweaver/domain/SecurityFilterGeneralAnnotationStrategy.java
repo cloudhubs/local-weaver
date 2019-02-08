@@ -18,7 +18,7 @@ import java.util.*;
 public class SecurityFilterGeneralAnnotationStrategy implements SecurityFilterStrategy {
     @Override
     public boolean doFilter(CtClass clazz,
-                            List<SecurityMethod> methods) {
+                            Set<SecurityMethod> methods) {
         AnnotationsAttribute annotationsAttribute =
                 (AnnotationsAttribute) clazz.getClassFile().getAttribute(AnnotationsAttribute.visibleTag);
         if(annotationsAttribute != null) {

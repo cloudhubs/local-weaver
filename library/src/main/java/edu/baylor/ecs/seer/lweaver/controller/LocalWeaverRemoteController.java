@@ -1,25 +1,25 @@
 package edu.baylor.ecs.seer.lweaver.controller;
 
+import edu.baylor.ecs.seer.common.context.SeerContext;
 import edu.baylor.ecs.seer.lweaver.service.*;
 import edu.baylor.ecs.seer.lweaver.service.adapter.RemoteEvaluatorServiceAdapter;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/local-weaver/remote")
 public class LocalWeaverRemoteController {
 
+    private SeerContextService seerContextService;
     private FlowStructureService flowStructureService;
     private BytecodeFlowStructureService bytecodeFlowStructureService;
     private DependencyService dependencyService;
     private DataModelService dataModelService;
-    private SecurityService securityService;
+    private SeerMsSecurityContextService securityService;
 
     @Autowired
-    public LocalWeaverRemoteController(FlowStructureService flowStructureService, BytecodeFlowStructureService bytecodeFlowStructureService, DependencyService dependencyService, DataModelService dataModelService, SecurityService securityService) {
+    public LocalWeaverRemoteController(SeerContextService seerContextService, FlowStructureService flowStructureService, BytecodeFlowStructureService bytecodeFlowStructureService, DependencyService dependencyService, DataModelService dataModelService, SeerMsSecurityContextService securityService) {
+        this.seerContextService = seerContextService;
         this.flowStructureService = flowStructureService;
         this.bytecodeFlowStructureService = bytecodeFlowStructureService;
         this.dependencyService = dependencyService;
@@ -38,41 +38,41 @@ public class LocalWeaverRemoteController {
     // The flow structure endpoint generates a structure showing what methods are called by what classes and what
     // methods those methods call
     @RequestMapping(value = "/flowStructure")
-    @GetMapping
-    public String generateFlowStructure(@PathVariable String path) {
-        return (new RemoteEvaluatorServiceAdapter(flowStructureService)).deriveStructure();
+    @PostMapping
+    public SeerContext generateFlowStructure(@RequestBody SeerContext context) {
+        context = seerContextService.getContextFromMicroservices(context);
+        return (new RemoteEvaluatorServiceAdapter(flowStructureService)).deriveStructure(context);
     }
 
     // The bytecode flow structure endpoint generates a structure of bytecode instructions as a tree, filtering out
     // the unnecessary ones to be used to analyze if and for cycles
     @RequestMapping(value = "/bytecodeFlowStructure")
-    @GetMapping
-    public String generateBytecodeFlowStructure(@PathVariable String path) {
-        return (new RemoteEvaluatorServiceAdapter(bytecodeFlowStructureService)).deriveStructure();
-
+    @PostMapping
+    public SeerContext generateBytecodeFlowStructure(@RequestBody SeerContext context) {
+        return (new RemoteEvaluatorServiceAdapter(bytecodeFlowStructureService)).deriveStructure(context);
     }
 
     // The dependency endpoint generates a list of what outside packages are used and how many times they are used in
     // the application
     @RequestMapping(value = "/dependency")
-    @GetMapping
-    public String generateDependencyStructure(@PathVariable String path) {
-        return (new RemoteEvaluatorServiceAdapter(dependencyService)).deriveStructure();
+    @PostMapping
+    public SeerContext generateDependencyStructure(@RequestBody SeerContext context) {
+        return (new RemoteEvaluatorServiceAdapter(dependencyService)).deriveStructure(context);
     }
 
     // The data model endpoint generates a structure of entity objects and their member variables along with the
     // annotation values on those member variables
     @RequestMapping(value = "/dataModel")
-    @GetMapping
-    public String generateDataModelStructure(@PathVariable String path) {
-        return (new RemoteEvaluatorServiceAdapter(dataModelService)).deriveStructure();
+    @PostMapping
+    public SeerContext generateDataModelStructure(@RequestBody SeerContext context) {
+        return (new RemoteEvaluatorServiceAdapter(dataModelService)).deriveStructure(context);
     }
 
     // The security endpoint generates a list for each role of what methods may be called by the role specified
     @RequestMapping(value = "/security")
-    @GetMapping
-    public String generateSecurityStructure(@PathVariable String path) {
-        return (new RemoteEvaluatorServiceAdapter(securityService)).deriveStructure();
+    @PostMapping
+    public SeerContext generateSecurityStructure(@RequestBody SeerContext context) {
+        return (new RemoteEvaluatorServiceAdapter(securityService)).deriveStructure(context);
     }
 
 }

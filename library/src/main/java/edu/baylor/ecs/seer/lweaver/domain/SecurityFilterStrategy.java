@@ -11,6 +11,6 @@ import java.util.Set;
 public interface SecurityFilterStrategy {
 
     boolean doFilter(CtClass clazz,
-                     List<SecurityMethod> methods);
+                     Set<SecurityMethod> methods);
 
 }

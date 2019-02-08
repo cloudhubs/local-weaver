@@ -16,7 +16,7 @@ public class Controller {
     private BytecodeFlowStructureService bytecodeFlowStructureService;
     private DependencyService dependencyService;
     private DataModelService dataModelService;
-    private SecurityService securityService;
+    private SeerMsSecurityContextService securityService;
 
     private String validatePath(String arg) {
         if (arg.endsWith("~!r!~")) {
@@ -28,7 +28,7 @@ public class Controller {
     }
 
     @Autowired
-    public Controller(FlowStructureService flowStructureService, BytecodeFlowStructureService bytecodeFlowStructureService, DependencyService dependencyService, DataModelService dataModelService, SecurityService securityService) {
+    public Controller(FlowStructureService flowStructureService, BytecodeFlowStructureService bytecodeFlowStructureService, DependencyService dependencyService, DataModelService dataModelService, SeerMsSecurityContextService securityService) {
         this.flowStructureService = flowStructureService;
         this.bytecodeFlowStructureService = bytecodeFlowStructureService;
         this.dependencyService = dependencyService;
@@ -86,7 +86,7 @@ public class Controller {
     @RequestMapping(value = "/security/{path}")
     @GetMapping
     public String generateSecurityStructure(@PathVariable String path) {
-        return securityService.deriveStructure(validatePath(path));
+        return securityService.getMsSeerSecurityContext(validatePath(path));
     }
 
 }

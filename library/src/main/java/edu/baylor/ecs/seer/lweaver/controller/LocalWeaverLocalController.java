@@ -15,7 +15,7 @@ public class LocalWeaverLocalController {
     private BytecodeFlowStructureService bytecodeFlowStructureService;
     private DependencyService dependencyService;
     private DataModelService dataModelService;
-    private SecurityService securityService;
+    private SeerMsSecurityContextService securityService;
 
     private String validatePath(String arg) {
         if (arg.endsWith("~!r!~")) {
@@ -27,7 +27,7 @@ public class LocalWeaverLocalController {
     }
 
     @Autowired
-    public LocalWeaverLocalController(FlowStructureService flowStructureService, BytecodeFlowStructureService bytecodeFlowStructureService, DependencyService dependencyService, DataModelService dataModelService, SecurityService securityService) {
+    public LocalWeaverLocalController(FlowStructureService flowStructureService, BytecodeFlowStructureService bytecodeFlowStructureService, DependencyService dependencyService, DataModelService dataModelService, SeerMsSecurityContextService securityService) {
         this.flowStructureService = flowStructureService;
         this.bytecodeFlowStructureService = bytecodeFlowStructureService;
         this.dependencyService = dependencyService;
@@ -81,7 +81,7 @@ public class LocalWeaverLocalController {
     @RequestMapping(value = "/security/{path}")
     @GetMapping
     public String generateSecurityStructure(@PathVariable String path) {
-        return securityService.deriveStructure(validatePath(path));
+        return securityService.getMsSeerSecurityContext(validatePath(path));
     }
 
 }
