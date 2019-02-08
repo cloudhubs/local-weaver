@@ -16,10 +16,10 @@ public class LocalWeaverRemoteController {
     private BytecodeFlowStructureService bytecodeFlowStructureService;
     private DependencyService dependencyService;
     private DataModelService dataModelService;
-    private SecurityService securityService;
+    private SeerMsSecurityContextService securityService;
 
     @Autowired
-    public LocalWeaverRemoteController(FlowStructureService flowStructureService, BytecodeFlowStructureService bytecodeFlowStructureService, DependencyService dependencyService, DataModelService dataModelService, SecurityService securityService) {
+    public LocalWeaverRemoteController(FlowStructureService flowStructureService, BytecodeFlowStructureService bytecodeFlowStructureService, DependencyService dependencyService, DataModelService dataModelService, SeerMsSecurityContextService securityService) {
         this.flowStructureService = flowStructureService;
         this.bytecodeFlowStructureService = bytecodeFlowStructureService;
         this.dependencyService = dependencyService;

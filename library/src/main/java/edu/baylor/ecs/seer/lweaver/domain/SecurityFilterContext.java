@@ -16,7 +16,7 @@ public class SecurityFilterContext {
     }
 
     public boolean doFilter(CtClass clazz,
-                            List<SecurityMethod> methods) {
+                            Set<SecurityMethod> methods) {
         return strategy.doFilter(clazz, methods);
     }
 
