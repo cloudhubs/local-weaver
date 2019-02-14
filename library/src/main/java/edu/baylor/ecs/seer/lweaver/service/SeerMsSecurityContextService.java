@@ -1,5 +1,6 @@
 package edu.baylor.ecs.seer.lweaver.service;
 
+import edu.baylor.ecs.seer.common.context.SeerRequestContext;
 import edu.baylor.ecs.seer.common.context.SeerSecurityContext;
 import edu.baylor.ecs.seer.common.security.SecurityMethod;
 import javassist.CtClass;
@@ -12,7 +13,9 @@ import java.util.Set;
 @Service
 public class SeerMsSecurityContextService {
 
-    public SeerSecurityContext getMsSeerSecurityContext(List<CtClass> ctClasses, SeerSecurityContext securityContext) {
+    public SeerSecurityContext getMsSeerSecurityContext(List<CtClass> ctClasses, SeerRequestContext req) {
+
+        SeerSecurityContext securityContext = new SeerSecurityContext(req.getSecurityAnalyzerInterface());
 
         SecurityFilterContext securityFilterContext =
                 new SecurityFilterContext(new SecurityFilterGeneralAnnotationStrategy());

@@ -17,7 +17,7 @@ public class LocalWeaverResource {
 
     @PostMapping
     @RequestMapping(value = "/")
-    public SeerContext generateFlowStructure(@RequestBody SeerContext context) {
+    public SeerContext generateSeerContext(@RequestBody SeerContext context) {
         return seerContextService.populateSeerContext(context);
     }
 

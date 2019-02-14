@@ -18,7 +18,17 @@ import java.util.Set;
 @Service
 public class SeerMsEntityContextService {
 
-    public SeerEntityContext getSeerEntityContext(List<CtClass> entityClasses){
+    public SeerEntityContext getSeerEntityContext(List<CtClass> allClasses){
+
+        List<CtClass> entityClasses = getEntityClasses(allClasses);
+
+        SeerEntityContext seerEntityContext = deriveEntities(entityClasses);
+
+        return seerEntityContext;
+    }
+
+    public SeerEntityContext deriveEntities(List<CtClass> entityClasses){
+
         // Establish the list of entities
         List<EntityModel> entities = new ArrayList<>();
 
@@ -77,16 +87,21 @@ public class SeerMsEntityContextService {
         return seerEntityContext;
     }
 
-    protected final boolean filter(CtClass clazz){
-        AnnotationsAttribute annotationsAttribute = (AnnotationsAttribute) clazz.getClassFile().getAttribute(AnnotationsAttribute.visibleTag);
-        if(annotationsAttribute != null) {
-            Annotation[] annotations = annotationsAttribute.getAnnotations();
-            for (Annotation annotation : annotations) {
-                if (annotation.getTypeName().equals("javax.persistence.Entity")) {
-                    return true;
+
+    private List<CtClass> getEntityClasses(List<CtClass> allClasses){
+        List<CtClass> entityClasses = new ArrayList<>();
+        for (CtClass ctClass: allClasses
+             ) {
+            AnnotationsAttribute annotationsAttribute = (AnnotationsAttribute) ctClass.getClassFile().getAttribute(AnnotationsAttribute.visibleTag);
+            if(annotationsAttribute != null) {
+                Annotation[] annotations = annotationsAttribute.getAnnotations();
+                for (Annotation annotation : annotations) {
+                    if (annotation.getTypeName().equals("javax.persistence.Entity")) {
+                        entityClasses.add(ctClass);
+                    }
                 }
             }
         }
-        return false;
+        return entityClasses;
     }
 }

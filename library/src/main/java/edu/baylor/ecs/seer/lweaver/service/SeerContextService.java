@@ -29,16 +29,21 @@ public class SeerContextService {
 
     public SeerContext populateSeerContext(SeerContext seerContext){
         SeerRequestContext req = seerContext.getRequest();
+        List<String> resourcePaths = getResourcePaths(req);
+        List<SeerMsContext> msContexts = generateMsContexts(resourcePaths);
+        seerContext.setMsContexts(msContexts);
+        seerContext.setSecurity(generateSecurityContext(req));
+        return seerContext;
+    }
+
+    private List<String> getResourcePaths(SeerRequestContext req){
         List<String> resourcePaths = null;
         if (req.isUseRemote()){
             resourcePaths = resourceService.getResourcePaths("");
         } else {
             resourcePaths = resourceService.getResourcePaths(req.getPathToCompiledMicroservices());
         }
-        List<SeerMsContext> msContexts = generateMsContexts(resourcePaths);
-        seerContext.setMsContexts(msContexts);
-        seerContext.setSecurity(generateSecurityContext(seerContext.getSecurity()));
-        return seerContext;
+        return resourcePaths;
     }
 
     private List<SeerMsContext> generateMsContexts(List<String> resourcePaths){
@@ -55,7 +60,7 @@ public class SeerContextService {
         return msContexts;
     }
 
-    private SeerSecurityContext generateSecurityContext(SeerSecurityContext seerSecurityContext){
-        return securityService.getMsSeerSecurityContext(this.allCtClasses, seerSecurityContext);
+    private SeerSecurityContext generateSecurityContext(SeerRequestContext req){
+        return securityService.getMsSeerSecurityContext(this.allCtClasses, req);
     }
 }

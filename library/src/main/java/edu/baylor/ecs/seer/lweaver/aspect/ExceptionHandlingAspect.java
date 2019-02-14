@@ -15,11 +15,11 @@ public class ExceptionHandlingAspect {
 
     private Logger logger = LoggerFactory.getLogger(ExceptionHandlingAspect.class);
 
-    @AfterThrowing(value = "edu.baylor.ecs.seer.lweaver.aspect.CommonJoinPointConfig.allMethods()", throwing = "ex")
-    public void logException(JoinPoint joinPoint, Exception ex) {
-        logger = LoggerFactory.getLogger(joinPoint.getSignature().getDeclaringType());
-        logger.error("Exception thrown from: " + joinPoint.getSignature().getName());
-        logger.error(ex.toString());
-    }
+//    @AfterThrowing(value = "edu.baylor.ecs.seer.lweaver.aspect.CommonJoinPointConfig.allMethods()", throwing = "ex")
+//    public void logException(JoinPoint joinPoint, Exception ex) {
+//        logger = LoggerFactory.getLogger(joinPoint.getSignature().getDeclaringType());
+//        logger.error("Exception thrown from: " + joinPoint.getSignature().getName());
+//        logger.error(ex.toString());
+//    }
 
 }
