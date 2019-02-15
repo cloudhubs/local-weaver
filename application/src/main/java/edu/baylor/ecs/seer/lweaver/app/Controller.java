@@ -17,6 +17,7 @@ public class Controller {
     @PostMapping
     @RequestMapping(value = "/")
     public SeerContext generateSeerContext(@RequestBody SeerContext context) {
-        return seerContextService.populateSeerContext(context);
+        context = seerContextService.populateSeerContext(context);
+        return context;
     }
 }
