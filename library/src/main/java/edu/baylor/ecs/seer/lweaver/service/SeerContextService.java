@@ -25,6 +25,12 @@ public class SeerContextService {
     @Autowired
     private SeerMsEntityContextService entityService;
 
+    @Autowired
+    private FlowStructureService flowService;
+
+    @Autowired
+    private BytecodeFlowStructureService byteCode;
+
     private List<CtClass> allCtClasses;
 
     public SeerContext populateSeerContext(SeerContext seerContext){
@@ -52,10 +58,13 @@ public class SeerContextService {
         for (String path: resourcePaths
         ) {
             SeerMsContext msContext = new SeerMsContext();
+            msContext.setModuleName(path.substring(path.lastIndexOf('/') + 1));
             List<CtClass> ctClasses = resourceService.getCtClasses(path);
             allCtClasses.addAll(ctClasses);
             msContext.setEntity(entityService.getSeerEntityContext(ctClasses));
             msContexts.add(msContext);
+            flowService.process(ctClasses, new SeerContext());
+            byteCode.process(ctClasses);
         }
         return msContexts;
     }
@@ -63,4 +72,16 @@ public class SeerContextService {
     private SeerSecurityContext generateSecurityContext(SeerRequestContext req){
         return securityService.getMsSeerSecurityContext(this.allCtClasses, req);
     }
+
+    //set module characteristics
+
+    //set module lines of code
+
+    //set module entities counter
+
+    //set module entities context
+
+    //set global context
+
+
 }

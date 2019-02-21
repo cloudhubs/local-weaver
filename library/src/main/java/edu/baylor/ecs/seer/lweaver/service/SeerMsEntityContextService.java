@@ -84,6 +84,7 @@ public class SeerMsEntityContextService {
         // Return the list of entities as JSON
         SeerEntityContext seerEntityContext = new SeerEntityContext();
         seerEntityContext.setEntities(entities);
+        seerEntityContext.setEntityCounter(entities.size());
         return seerEntityContext;
     }
 

@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.baylor.ecs.seer.common.FlowNode;
 import javassist.CtClass;
 import javassist.CtMethod;
-import javassist.bytecode.AnnotationsAttribute;
+import javassist.bytecode.*;
 import javassist.bytecode.analysis.FramePrinter;
 import javassist.bytecode.annotation.Annotation;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,14 +34,33 @@ public class BytecodeFlowStructureService {
         FramePrinter fpSout = new FramePrinter(System.out);
         String applicationStructureInJson = "";
 
+        classes = self.getServiceClasses(classes);
+
+
         // Loop through every class in the array
         for(CtClass clazz : classes){
+
+//            ClassFile cf = clazz.getClassFile();
+//            MethodInfo minfo = cf.getMethod("move");    // we assume move is not overloaded.
+//            CodeAttribute ca = minfo.getCodeAttribute();
+//            CodeIterator ci = ca.iterator();
+//            while (ci.hasNext()) {
+//                int index = 0;
+//                try {
+//                    index = ci.next();
+//                } catch (BadBytecode badBytecode) {
+//                    badBytecode.printStackTrace();
+//                }
+//                int op = ci.byteAt(index);
+//                System.out.println(Mnemonic.OPCODE[op]);
+//            }
 
             // Retrieve all the methods of a class
             CtMethod[] methods = clazz.getDeclaredMethods();
 
             // Loop through every method
             for(CtMethod method : methods){
+
                 try {
                     if(!method.getName().startsWith("get") && !method.getName().startsWith("set")) {
                         fp.print(method);
@@ -71,21 +90,41 @@ public class BytecodeFlowStructureService {
         //return sb.toString();
     }
 
-    public final boolean filter(CtClass clazz){
-        AnnotationsAttribute annotationsAttribute = (AnnotationsAttribute) clazz.getClassFile().getAttribute(AnnotationsAttribute.visibleTag);
-        if(annotationsAttribute != null) {
-            Annotation[] annotations = annotationsAttribute.getAnnotations();
-            for (Annotation annotation : annotations) {
-                if (annotation.getTypeName().equals("org.springframework.stereotype.Service") || annotation.getTypeName().equals("org.springframework.stereotype.Component")){
-                    return true;
+//    public final boolean filter(CtClass clazz){
+//        AnnotationsAttribute annotationsAttribute = (AnnotationsAttribute) clazz.getClassFile().getAttribute(AnnotationsAttribute.visibleTag);
+//        if(annotationsAttribute != null) {
+//            Annotation[] annotations = annotationsAttribute.getAnnotations();
+//            for (Annotation annotation : annotations) {
+//                if (annotation.getTypeName().equals("org.springframework.stereotype.Service") || annotation.getTypeName().equals("org.springframework.stereotype.Component")){
+//                    return true;
+//                }
+//            }
+//        }
+//        return false;
+//    }
+
+    private List<CtClass> getServiceClasses(List<CtClass> allClasses){
+        List<CtClass> entityClasses = new ArrayList<>();
+        for (CtClass ctClass: allClasses
+        ) {
+            AnnotationsAttribute annotationsAttribute = (AnnotationsAttribute) ctClass.getClassFile().getAttribute(AnnotationsAttribute.visibleTag);
+            if(annotationsAttribute != null) {
+                Annotation[] annotations = annotationsAttribute.getAnnotations();
+                for (Annotation annotation : annotations) {
+                    if (annotation.getTypeName().equals("javax.ejb.Stateless")) {
+                        entityClasses.add(ctClass);
+                    }
                 }
             }
         }
-        return false;
+        return entityClasses;
     }
 
     // The purpose of preprocessing is to remove any methods that are abstract or have no body and also
     // to break up each method into a separate string
+
+    //http://www.javassist.org/tutorial/tutorial3.html
+
     public List<String> preprocessBytecode(String bytecode){
         // Setup some initial strctures
         List<String> storage = new ArrayList<>();
