@@ -72,13 +72,13 @@ public class ResourceService {
      * @param file
      * @return
      */
-    public List<CtClass> getCtClasses(String file){
+    public List<CtClass> getCtClasses(String file, String organizationPath){
         ClassPool cp = ClassPool.getDefault();
         List<CtClass> ctClasses = new ArrayList<>();
         // 1. Get resource
         Resource resource = getResource(file);
         // 2. Get class files
-        Set<ClassFile> classFiles = getClassFileSet(resource);
+        Set<ClassFile> classFiles = getClassFileSet(resource, organizationPath);
 
         // Class file to ct class
         for (ClassFile classFile : classFiles) {
@@ -111,7 +111,7 @@ public class ResourceService {
      * @param resource
      * @return
      */
-    private Set<ClassFile> getClassFileSet(Resource resource){
+    private Set<ClassFile> getClassFileSet(Resource resource, String organizationPath){
         Set<ClassFile> classFiles = new HashSet<>();
         // 2.1
         String uriString = getUriStringFromResource(resource);
@@ -124,11 +124,15 @@ public class ResourceService {
             ) {
                 //2.3
                 if (isClassFile(je)){
-                    //2.4
-                    ClassFile classFile = getClassFileFromJar(jar, je);
-                    if (classFile != null){
-                        classFiles.add(classFile);
+                    //ToDo: Check organization path on modules layer
+                    if (je.getName().contains(organizationPath)) {
+                        //2.4
+                        ClassFile classFile = getClassFileFromJar(jar, je);
+                        if (classFile != null) {
+                            classFiles.add(classFile);
+                        }
                     }
+
                 }
             }
         } catch (IOException e) {
@@ -179,6 +183,7 @@ public class ResourceService {
      * @param jar
      * @param entry
      * @return
+     * ToDo: Do not process jars for libraries, just code!
      */
     private ClassFile getClassFileFromJar(JarFile jar, JarEntry entry) {
         try (InputStream in = jar.getInputStream(entry)) {

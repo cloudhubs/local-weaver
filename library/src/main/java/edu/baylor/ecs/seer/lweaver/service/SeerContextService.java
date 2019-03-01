@@ -36,9 +36,9 @@ public class SeerContextService {
     public SeerContext populateSeerContext(SeerContext seerContext){
         SeerRequestContext req = seerContext.getRequest();
         List<String> resourcePaths = getResourcePaths(req);
-        List<SeerMsContext> msContexts = generateMsContexts(resourcePaths);
+        List<SeerMsContext> msContexts = generateMsContexts(resourcePaths, req.getOrganizationPath());
         seerContext.setMsContexts(msContexts);
-        seerContext.setSecurity(generateSecurityContext(req));
+        //seerContext.setSecurity(generateSecurityContext(req));
         return seerContext;
     }
 
@@ -52,14 +52,14 @@ public class SeerContextService {
         return resourcePaths;
     }
 
-    private List<SeerMsContext> generateMsContexts(List<String> resourcePaths){
+    private List<SeerMsContext> generateMsContexts(List<String> resourcePaths, String organizationPath){
         List<SeerMsContext> msContexts = new ArrayList<>();
         allCtClasses = new ArrayList<>();
         for (String path: resourcePaths
         ) {
             SeerMsContext msContext = new SeerMsContext();
             msContext.setModuleName(path.substring(path.lastIndexOf('/') + 1));
-            List<CtClass> ctClasses = resourceService.getCtClasses(path);
+            List<CtClass> ctClasses = resourceService.getCtClasses(path, organizationPath);
             allCtClasses.addAll(ctClasses);
             msContext.setEntity(entityService.getSeerEntityContext(ctClasses));
             msContexts.add(msContext);
