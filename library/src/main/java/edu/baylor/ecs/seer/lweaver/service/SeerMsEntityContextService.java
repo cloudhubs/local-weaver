@@ -88,7 +88,7 @@ public class SeerMsEntityContextService {
             CtField[] fields = clazz.getFields();
             CtField[] privateFields = clazz.getDeclaredFields();
             List<CtField> aggregateFields = new ArrayList<>();
-            aggregateFields.addAll(Arrays.asList(fields));
+            //aggregateFields.addAll(Arrays.asList(fields));
             aggregateFields.addAll(Arrays.asList(privateFields));
 
             List<SeerField> seerFields = new ArrayList<>();
