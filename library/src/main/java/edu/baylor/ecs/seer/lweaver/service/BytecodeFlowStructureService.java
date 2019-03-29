@@ -125,8 +125,10 @@ public class BytecodeFlowStructureService {
 
     //http://www.javassist.org/tutorial/tutorial3.html
 
+    // TODO: test
+    // TODO: maybe refactor
     public List<String> preprocessBytecode(String bytecode){
-        // Setup some initial strctures
+        // Setup some initial structures
         List<String> storage = new ArrayList<>();
         String currentMethod = "";
 
@@ -195,6 +197,8 @@ public class BytecodeFlowStructureService {
         return storage;
     }
 
+    // TODO: test
+    // TODO: refactor
     // Processing the bytecode will create a tree of nodes that will show the flow of the nodes
     public List< Map<Integer, FlowNode> > processBytecode(String bytecode){
 
@@ -252,7 +256,7 @@ public class BytecodeFlowStructureService {
                     // If the root to this tree is null, initialize a new root
                     if (current == null) {
                         current = flowNode;
-                        // Ret the superoot
+                        // Set the superroot
                         root = current;
                     } else {
                         // If there is a currentNode then assume sequential ordering and add the new child
@@ -302,6 +306,7 @@ public class BytecodeFlowStructureService {
         return roots;
     }
 
+    // TODO: test
     // Post processing is optional but will remove any filler nodes so the only ones that remain are the initial
     // instruction and any logic nodes or method call nodes
     public Map<Integer, FlowNode> postProcessBytecode(Map<Integer, FlowNode> map){
@@ -319,7 +324,7 @@ public class BytecodeFlowStructureService {
                 importantNodes.add(entry.getKey());
             }
 
-            // If it's a conditional or goto then we want the node and both it's children, even if one of the children
+            // If it's a conditional or goto then we want the node and both its children, even if one of the children
             // is a normal node
             if(type.equals("conditional") || type.equals("goto")){
                 // Add the node
