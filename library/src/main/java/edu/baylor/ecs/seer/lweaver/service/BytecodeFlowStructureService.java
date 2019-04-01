@@ -111,13 +111,18 @@ public class BytecodeFlowStructureService {
             if(annotationsAttribute != null) {
                 Annotation[] annotations = annotationsAttribute.getAnnotations();
                 for (Annotation annotation : annotations) {
-                    if (annotation.getTypeName().equals("javax.ejb.Stateless")) {
+                    if (isServiceClass(annotation)) {
                         entityClasses.add(ctClass);
                     }
                 }
             }
         }
         return entityClasses;
+    }
+
+    private boolean isServiceClass(Annotation annotation) {
+        return annotation.getTypeName().contains("javax.ejb")
+                || annotation.getTypeName().contains("springframework.stereotype");
     }
 
     // The purpose of preprocessing is to remove any methods that are abstract or have no body and also

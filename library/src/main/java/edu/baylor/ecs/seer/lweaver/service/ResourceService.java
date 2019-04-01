@@ -125,7 +125,7 @@ public class ResourceService {
                 //2.3
                 if (isClassFile(je)){
                     //ToDo: Check organization path on modules layer
-                    if (je.getName().contains(organizationPath)) {
+                    if (je.getName().contains(organizationPath.replace(".", "/"))) {
                         //2.4
                         ClassFile classFile = getClassFileFromJar(jar, je);
                         if (classFile != null) {

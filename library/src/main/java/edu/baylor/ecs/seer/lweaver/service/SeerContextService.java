@@ -61,6 +61,7 @@ public class SeerContextService {
             msContext.setModuleName(path.substring(path.lastIndexOf('/') + 1));
             List<CtClass> ctClasses = resourceService.getCtClasses(path, organizationPath);
             allCtClasses.addAll(ctClasses);
+            msContext.setCtClasses(ctClasses);
             msContext.setEntity(entityService.getSeerEntityContext(ctClasses));
             msContexts.add(msContext);
             flowService.process(ctClasses, new SeerContext());
