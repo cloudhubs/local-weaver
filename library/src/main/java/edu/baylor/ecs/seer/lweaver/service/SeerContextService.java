@@ -4,6 +4,7 @@ import edu.baylor.ecs.seer.common.context.SeerContext;
 import edu.baylor.ecs.seer.common.context.SeerMsContext;
 import edu.baylor.ecs.seer.common.context.SeerRequestContext;
 import edu.baylor.ecs.seer.common.context.SeerSecurityContext;
+import edu.baylor.ecs.seer.common.entity.EntityModel;
 import javassist.CtClass;
 import javassist.bytecode.ClassFile;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -58,11 +59,20 @@ public class SeerContextService {
         for (String path: resourcePaths
         ) {
             SeerMsContext msContext = new SeerMsContext();
+            System.out.println(path);
             msContext.setModuleName(path.substring(path.lastIndexOf('/') + 1));
             List<CtClass> ctClasses = resourceService.getCtClasses(path, organizationPath);
             allCtClasses.addAll(ctClasses);
             msContext.setEntity(entityService.getSeerEntityContext(ctClasses));
-            msContexts.add(msContext);
+            for (EntityModel e: msContext.getEntity().getEntities()
+                 ) {
+                e.setModuleName(msContext.getModuleName());
+            }
+            //getting rid of wars from java libraries
+            if (msContext.getEntity().getEntities().size() > 0){
+                msContexts.add(msContext);
+            }
+            //flows
             flowService.process(ctClasses, new SeerContext());
             byteCode.process(ctClasses);
         }
