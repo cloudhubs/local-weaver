@@ -103,8 +103,29 @@ public class SeerMsEntityContextService {
                 seerField.setName(field.getName());
                 try {
                     String rawName = field.getType().getName();
+
+                    CtClass c = field.getType();
                     seerField.setFullType(rawName);
                     seerField.setType(rawName.substring(rawName.lastIndexOf('.') + 1));
+                    if (seerField.getType().equals("Set")){
+                        CtClass[] nestedClasses = field.getDeclaringClass().getNestedClasses();
+                        System.out.println(field.getDeclaringClass().getName());
+                        CtClass c1 = field.getType();
+                        System.out.println(field.getFieldInfo().getAttributes().size());
+                        List attributes = field.getFieldInfo().getAttributes();
+                        for (int i = 0; i < attributes.size(); i++){
+                            System.out.println(attributes.get(i).toString());
+                        }
+                        System.out.println(field.getFieldInfo().getDescriptor());
+                        System.out.println(c1.getGenericSignature());
+                        System.out.println(c1.getSimpleName());
+                        CtClass[] ctClasses = c1.getDeclaredClasses();
+                        for (CtClass ct: ctClasses
+                             ) {
+                            System.out.println(ct.getName());
+                        }
+                        System.out.println(c1.getComponentType());
+                    }
                 } catch (NotFoundException e) {
                     e.printStackTrace();
                 }
@@ -137,7 +158,7 @@ public class SeerMsEntityContextService {
                             case ("javax.persistence.ManyToOne"):
                                 seerField.setSeerEntityRelation(SeerEntityRelation.MANYTOONE);
                                 break;
-                            case ("javax.persistance.OneToMany"):
+                            case ("javax.persistence.OneToMany"):
                                 seerField.setSeerEntityRelation(SeerEntityRelation.ONETOMANY);
                                 break;
                             //case ()
@@ -161,7 +182,7 @@ public class SeerMsEntityContextService {
                     }
                 }
                 // Add the field to the entity
-                entityModel.addInstanceVariableModel(instanceVariableModel);
+                //entityModel.addInstanceVariableModel(instanceVariableModel);
                 //
                 seerFields.add(seerField);
             }

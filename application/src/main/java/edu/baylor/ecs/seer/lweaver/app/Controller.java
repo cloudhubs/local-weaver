@@ -1,11 +1,9 @@
 package edu.baylor.ecs.seer.lweaver.app;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import edu.baylor.ecs.seer.common.SampleObject;
 import edu.baylor.ecs.seer.common.context.SeerContext;
-import edu.baylor.ecs.seer.common.context.SeerFlowContext;
-import edu.baylor.ecs.seer.common.context.SeerMsContext;
-import edu.baylor.ecs.seer.lweaver.service.*;
+//import edu.baylor.ecs.seer.lweaver.service.JavassistClassService;
+import edu.baylor.ecs.seer.lweaver.service.SeerContextService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,38 +13,33 @@ public class Controller {
     @Autowired
     private SeerContextService seerContextService;
 
-    @Autowired
-    private JavassistClassService javassistClassService;
 
-    @Autowired
-    private BytecodeFlowStructureService bytecodeFlowStructureService;
+//    @Autowired
+//    private JavassistClassService javassistClassService;
 
 
     @CrossOrigin(origins = "*")
-    @RequestMapping(value = "/", method = RequestMethod.POST)
-    public SeerContext generateSeerContext(@RequestBody SeerContext context) {
+    @RequestMapping(path = "/", method = RequestMethod.POST, produces = "application/json; charset=UTF-8", consumes = {"text/plain", "application/*"})
+    @ResponseBody
+    public SeerContext generateSeerContext(@RequestBody SampleObject sampleObject) {
+        SeerContext context = new SeerContext();
+        context.setRequest(sampleObject.getRequest());
         context = seerContextService.populateSeerContext(context);
         return context;
     }
 
 
-    @CrossOrigin(origins = "*")
-    @RequestMapping(value = "/analyze", method = RequestMethod.POST)
-    public SeerContext analyzeBytecode(@RequestBody SeerContext context) throws JsonProcessingException {
-        context = generateSeerContext(context);
-        for (SeerMsContext msContext : context.getMsContexts()) {
-            SeerFlowContext flowContext = new SeerFlowContext();
-            flowContext.setMethodMaps(bytecodeFlowStructureService.process(msContext.getCtClasses()));
-            msContext.setFlow(flowContext);
-        }
-        return context;
-//        return new ObjectMapper().writer().writeValueAsString(context);
-    }
+//    @RequestMapping(path = "/", method = RequestMethod.POST, produces = "application/json; charset=UTF-8", consumes = {"text/plain", "application/*"})
+//    @ResponseBody
+//    public String handshake(@RequestBody SampleObject context){
+//        return "string";
+//    }
 
 
-    @CrossOrigin(origins = "*")
-    @RequestMapping(value = "/class", method = RequestMethod.GET)
-    public void getClasses(){
-        javassistClassService.classPool();
-    }
+//    @GetMapping
+//    @RequestMapping(value = "/class")
+//    public void getClasses(){
+//        javassistClassService.classPool();
+//    }
+
 }

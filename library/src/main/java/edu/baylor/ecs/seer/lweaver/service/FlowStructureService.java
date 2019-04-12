@@ -1,10 +1,13 @@
 package edu.baylor.ecs.seer.lweaver.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.baylor.ecs.seer.common.context.SeerContext;
+import edu.baylor.ecs.seer.common.context.SeerFlowContext;
+import edu.baylor.ecs.seer.common.flow.SeerFlowMethod;
 import javassist.CannotCompileException;
 import javassist.CtClass;
 import javassist.CtMethod;
+import javassist.bytecode.AnnotationsAttribute;
+import javassist.bytecode.annotation.Annotation;
 import javassist.expr.ExprEditor;
 import javassist.expr.MethodCall;
 import org.springframework.stereotype.Service;
@@ -18,12 +21,13 @@ import java.util.Map;
  * Generates flow
  */
 @Service
-public class FlowStructureService extends EvaluatorService {
+public class FlowStructureService {
 
-    protected final SeerContext process(List<CtClass> classes, SeerContext context){
-        // Setup some initial objects
-        Map<List<String>, List<List<String>>> formattedMap = new HashMap<>();
-        String applicationStructureInJson = "";
+
+
+    public SeerFlowContext process(List<CtClass> classes, SeerContext context){
+        Map<SeerFlowMethod, List<SeerFlowMethod>> seerFlowMethods = new HashMap<>();
+//        Map<List<String>, List<List<String>>> formattedMap = new HashMap<>();
 
         // Loop through every class in the array
         for(CtClass clazz : classes){
@@ -35,56 +39,66 @@ public class FlowStructureService extends EvaluatorService {
             for(CtMethod method : methods){
 
                 // Build the key for the formattedMap
-                ArrayList<String> formattedKey = new ArrayList<>();
-                formattedKey.add(clazz.getName());
-                formattedKey.add(method.getName());
+                SeerFlowMethod seerFlowMethod = new SeerFlowMethod();
+                seerFlowMethod.setClassName(clazz.getName());
+                seerFlowMethod.setMethodName(method.getName());
 
-                // Add the formattedKey to the formattedMap
-                formattedMap.put(formattedKey, new ArrayList<>());
+                if (seerFlowMethod.getClassName().contains("edu.baylor.ecs.seer.usermanagement")){
+                    // Add the formattedKey to the formattedMap
+                    seerFlowMethods.put(seerFlowMethod, new ArrayList<>());
 
 
-                // Instrument the method to pull out the method calls
-                try {
-                    method.instrument(
-                            new ExprEditor() {
-                                public void edit(MethodCall m) {
+                    // Instrument the method to pull out the method calls
+                    try {
+                        method.instrument(
+                                new ExprEditor() {
+                                    public void edit(MethodCall m) {
 
-                                    // Retrieve the list of subMethods
-                                    List<List<String>> subMethodList = formattedMap.get(formattedKey);
+                                        // Retrieve the list of subMethods
+                                        List<SeerFlowMethod> subMethodList = seerFlowMethods.get(seerFlowMethod);
 
-                                    // Build the key for the subMethod
-                                    ArrayList<String> subMethodKey = new ArrayList<>();
-                                    subMethodKey.add(m.getClassName());
-                                    subMethodKey.add(m.getMethodName());
+                                        // Build the key for the subMethod
+                                        SeerFlowMethod subMethodKey = new SeerFlowMethod();
+                                        subMethodKey.setClassName(m.getClassName());
+                                        subMethodKey.setMethodName(m.getMethodName());
+                                        if (subMethodKey.getClassName().contains("edu.baylor.ecs.seer.usermanagement")){
+                                            subMethodList.add(subMethodKey);
+                                        }
 
-                                    subMethodList.add(subMethodKey);
+                                    }
                                 }
-                            }
-                    );
-                } catch (CannotCompileException e){
-                    System.out.println(e.toString());
+                        );
+                    } catch (CannotCompileException e){
+                        System.out.println(e.toString());
+                    }
                 }
+
+
             }
         }
 
-        try {
-            applicationStructureInJson = new ObjectMapper().writeValueAsString(formattedMap);
-        } catch (Exception e){
-            System.out.println(e.toString());
-        }
+        SeerFlowContext seerFlowContext = new SeerFlowContext();
+        seerFlowContext.setSeerFlowMethods(seerFlowMethods);
+        return seerFlowContext;
 
-        return context; // temporary, must implement use of context
+//        try {
+//            applicationStructureInJson = new ObjectMapper().writeValueAsString(formattedMap);
+//        } catch (Exception e){
+//            System.out.println(e.toString());
+//        }
+
+//        return context; // temporary, must implement use of context
         // deprecated
         //return applicationStructureInJson;
     }
 
-    protected final boolean filter(CtClass clazz){
-
-        FlowStructureFilterContext filter =
-                new FlowStructureFilterContext(new FlowStructureFilterNameStrategy());
-
-        return filter.doFilter(clazz);
-
-    }
+//    protected final boolean filter(CtClass clazz){
+//
+//        FlowStructureFilterContext filter =
+//                new FlowStructureFilterContext(new FlowStructureFilterNameStrategy());
+//
+//        return filter.doFilter(clazz);
+//
+//    }
 
 }
