@@ -7,7 +7,6 @@ import javassist.CtMethod;
 import javassist.bytecode.*;
 import javassist.bytecode.analysis.FramePrinter;
 import javassist.bytecode.annotation.Annotation;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.BufferedReader;
@@ -23,38 +22,18 @@ import java.util.*;
 @Service
 public class BytecodeFlowStructureService {
 
-    @Autowired
-    BytecodeFlowStructureService self;
-
-    public final String process(List<CtClass> classes){
+    public final List<Map<Integer, FlowNode>> process(List<CtClass> classes){
         // Setup some initial objects
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         PrintStream out = new PrintStream(baos);
         FramePrinter fp = new FramePrinter(out);
-        FramePrinter fpSout = new FramePrinter(System.out);
         String applicationStructureInJson = "";
 
-        classes = self.getServiceClasses(classes);
+        classes = getServiceClasses(classes);
 
 
         // Loop through every class in the array
         for(CtClass clazz : classes){
-
-//            ClassFile cf = clazz.getClassFile();
-//            MethodInfo minfo = cf.getMethod("move");    // we assume move is not overloaded.
-//            CodeAttribute ca = minfo.getCodeAttribute();
-//            CodeIterator ci = ca.iterator();
-//            while (ci.hasNext()) {
-//                int index = 0;
-//                try {
-//                    index = ci.next();
-//                } catch (BadBytecode badBytecode) {
-//                    badBytecode.printStackTrace();
-//                }
-//                int op = ci.byteAt(index);
-//                System.out.println(Mnemonic.OPCODE[op]);
-//            }
-
             // Retrieve all the methods of a class
             CtMethod[] methods = clazz.getDeclaredMethods();
 
@@ -78,30 +57,8 @@ public class BytecodeFlowStructureService {
         String bytecode = new String(baos.toByteArray(), StandardCharsets.UTF_8);
 
         // Build the structure for parsing
-        List<Map<Integer, FlowNode>> trees = self.processBytecode(bytecode);
-
-        try {
-            applicationStructureInJson = new ObjectMapper().writeValueAsString(trees);
-        } catch (Exception e){
-            System.out.println(e.toString());
-        }
-
-        return applicationStructureInJson;
-        //return sb.toString();
+        return processBytecode(bytecode);
     }
-
-//    public final boolean filter(CtClass clazz){
-//        AnnotationsAttribute annotationsAttribute = (AnnotationsAttribute) clazz.getClassFile().getAttribute(AnnotationsAttribute.visibleTag);
-//        if(annotationsAttribute != null) {
-//            Annotation[] annotations = annotationsAttribute.getAnnotations();
-//            for (Annotation annotation : annotations) {
-//                if (annotation.getTypeName().equals("org.springframework.stereotype.Service") || annotation.getTypeName().equals("org.springframework.stereotype.Component")){
-//                    return true;
-//                }
-//            }
-//        }
-//        return false;
-//    }
 
     private List<CtClass> getServiceClasses(List<CtClass> allClasses){
         List<CtClass> entityClasses = new ArrayList<>();
@@ -120,6 +77,7 @@ public class BytecodeFlowStructureService {
         return entityClasses;
     }
 
+    // TODO: needs improvement
     private boolean isServiceClass(Annotation annotation) {
         return annotation.getTypeName().contains("javax.ejb")
                 || annotation.getTypeName().contains("springframework.stereotype");
@@ -130,7 +88,6 @@ public class BytecodeFlowStructureService {
 
     //http://www.javassist.org/tutorial/tutorial3.html
 
-    // TODO: test
     // TODO: maybe refactor
     public List<String> preprocessBytecode(String bytecode){
         // Setup some initial structures
@@ -186,9 +143,6 @@ public class BytecodeFlowStructureService {
             storage.add(currentMethod);
         }
 
-        // Reset the current method
-        currentMethod = "";
-
         // This will remove any functions that have no body
         Iterator<String> it = storage.iterator();
         while (it.hasNext()) {
@@ -202,15 +156,13 @@ public class BytecodeFlowStructureService {
         return storage;
     }
 
-    // TODO: test
     // TODO: refactor
     // Processing the bytecode will create a tree of nodes that will show the flow of the nodes
     public List< Map<Integer, FlowNode> > processBytecode(String bytecode){
-
         List< Map<Integer, FlowNode> > roots = new ArrayList<>();
 
         // Filter out garbage lines in the bytecode
-        List<String> processed = self.preprocessBytecode(bytecode);
+        List<String> processed = preprocessBytecode(bytecode);
 
         for(String s : processed) {
 
@@ -279,8 +231,10 @@ public class BytecodeFlowStructureService {
                 if(entry.getValue().getType().equals("conditional")){
                     String[] values = entry.getValue().getRaw().split(" ");
                     Integer next = Integer.parseInt(values[2]);
-                    FlowNode n = map.get(next);
-                    entry.getValue().addChild(n);
+                    if (map.containsKey(next)) {
+                        FlowNode n = map.get(next);
+                        entry.getValue().addChild(n);
+                    }
                 }
                 // If the node is a goto
                 //      break the existing condition
@@ -295,8 +249,10 @@ public class BytecodeFlowStructureService {
                     }
 
                     Integer next = Integer.parseInt(values[2]);
-                    FlowNode n = map.get(next);
-                    entry.getValue().addChild(n);
+                    if (map.containsKey(next)) {
+                        FlowNode n = map.get(next);
+                        entry.getValue().addChild(n);
+                    }
                 }
 
             }
@@ -304,14 +260,13 @@ public class BytecodeFlowStructureService {
             // If the tree exists then add it to the structure
             if(root != null) {
                 // Before adding it, post-process the map
-                roots.add(self.postProcessBytecode(map));
+                roots.add(postProcessBytecode(map));
             }
         }
 
         return roots;
     }
 
-    // TODO: test
     // Post processing is optional but will remove any filler nodes so the only ones that remain are the initial
     // instruction and any logic nodes or method call nodes
     public Map<Integer, FlowNode> postProcessBytecode(Map<Integer, FlowNode> map){
@@ -347,13 +302,15 @@ public class BytecodeFlowStructureService {
         for(int i = 0; i < sortedList.size() - 1; i++){
             Integer key = sortedList.get(i);
             // If it is a conditional or a goto node then it's children are already correct
-            if(!map.get(key).getType().equals("conditional") && !map.get(key).getType().equals("goto")){
-                // Clear the existing children and add the next child
-                map.get(key).setChildren(new ArrayList<>());
-                map.get(sortedList.get(i+1)).setParents(new ArrayList<>());
-                map.get(key).addChild(map.get(sortedList.get(i+1)));
-            } else if (map.get(key).getType().equals("goto")){
-                map.get(sortedList.get(i + 1)).removeParent(map.get(key));
+            if (map.containsKey(key)) {
+                if (!map.get(key).getType().equals("conditional") && !map.get(key).getType().equals("goto")) {
+                    // Clear the existing children and add the next child
+                    map.get(key).setChildren(new ArrayList<>());
+                    map.get(sortedList.get(i + 1)).setParents(new ArrayList<>());
+                    map.get(key).addChild(map.get(sortedList.get(i + 1)));
+                } else if (map.get(key).getType().equals("goto")) {
+                    map.get(sortedList.get(i + 1)).removeParent(map.get(key));
+                }
             }
         }
 

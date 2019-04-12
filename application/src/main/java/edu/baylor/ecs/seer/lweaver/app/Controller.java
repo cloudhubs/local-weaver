@@ -1,14 +1,13 @@
 package edu.baylor.ecs.seer.lweaver.app;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.baylor.ecs.seer.common.context.SeerContext;
+import edu.baylor.ecs.seer.common.context.SeerFlowContext;
 import edu.baylor.ecs.seer.common.context.SeerMsContext;
 import edu.baylor.ecs.seer.lweaver.service.*;
-import javassist.CtClass;
-import javassist.bytecode.ClassFile;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Set;
 
 @RestController
 public class Controller {
@@ -22,30 +21,31 @@ public class Controller {
     @Autowired
     private BytecodeFlowStructureService bytecodeFlowStructureService;
 
-    @Autowired
-    private ResourceService resourceService;
 
-    @PostMapping
-    @RequestMapping(value = "/")
+    @CrossOrigin(origins = "*")
+    @RequestMapping(value = "/", method = RequestMethod.POST)
     public SeerContext generateSeerContext(@RequestBody SeerContext context) {
         context = seerContextService.populateSeerContext(context);
         return context;
     }
 
 
-    @PostMapping
-    @RequestMapping(value = "/analyze")
-    public SeerContext analyzeBytecode(@RequestBody SeerContext context) {
+    @CrossOrigin(origins = "*")
+    @RequestMapping(value = "/analyze", method = RequestMethod.POST)
+    public SeerContext analyzeBytecode(@RequestBody SeerContext context) throws JsonProcessingException {
         context = generateSeerContext(context);
         for (SeerMsContext msContext : context.getMsContexts()) {
-            bytecodeFlowStructureService.process(msContext.getCtClasses());
+            SeerFlowContext flowContext = new SeerFlowContext();
+            flowContext.setMethodMaps(bytecodeFlowStructureService.process(msContext.getCtClasses()));
+            msContext.setFlow(flowContext);
         }
         return context;
+//        return new ObjectMapper().writer().writeValueAsString(context);
     }
 
 
-    @GetMapping
-    @RequestMapping(value = "/class")
+    @CrossOrigin(origins = "*")
+    @RequestMapping(value = "/class", method = RequestMethod.GET)
     public void getClasses(){
         javassistClassService.classPool();
     }
