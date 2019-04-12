@@ -2,6 +2,8 @@ package edu.baylor.ecs.seer.lweaver.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.baylor.ecs.seer.common.context.SeerContext;
+import edu.baylor.ecs.seer.common.context.SeerFlowContext;
+import edu.baylor.ecs.seer.common.flow.SeerFlowMethod;
 import javassist.CannotCompileException;
 import javassist.CtClass;
 import javassist.CtMethod;
@@ -18,12 +20,11 @@ import java.util.Map;
  * Generates flow
  */
 @Service
-public class FlowStructureService extends EvaluatorService {
+public class FlowStructureService {
 
-    protected final SeerContext process(List<CtClass> classes, SeerContext context){
-        // Setup some initial objects
-        Map<List<String>, List<List<String>>> formattedMap = new HashMap<>();
-        String applicationStructureInJson = "";
+    protected final SeerFlowContext process(List<CtClass> classes, SeerContext context){
+        Map<SeerFlowMethod, List<SeerFlowMethod>> seerFlowMethods = new HashMap<>();
+//        Map<List<String>, List<List<String>>> formattedMap = new HashMap<>();
 
         // Loop through every class in the array
         for(CtClass clazz : classes){
@@ -35,12 +36,12 @@ public class FlowStructureService extends EvaluatorService {
             for(CtMethod method : methods){
 
                 // Build the key for the formattedMap
-                ArrayList<String> formattedKey = new ArrayList<>();
-                formattedKey.add(clazz.getName());
-                formattedKey.add(method.getName());
+                SeerFlowMethod seerFlowMethod = new SeerFlowMethod();
+                seerFlowMethod.setClassName(clazz.getName());
+                seerFlowMethod.setMethodName(method.getName());
 
                 // Add the formattedKey to the formattedMap
-                formattedMap.put(formattedKey, new ArrayList<>());
+                seerFlowMethods.put(seerFlowMethod, new ArrayList<>());
 
 
                 // Instrument the method to pull out the method calls
@@ -50,13 +51,12 @@ public class FlowStructureService extends EvaluatorService {
                                 public void edit(MethodCall m) {
 
                                     // Retrieve the list of subMethods
-                                    List<List<String>> subMethodList = formattedMap.get(formattedKey);
+                                    List<SeerFlowMethod> subMethodList = seerFlowMethods.get(seerFlowMethod);
 
                                     // Build the key for the subMethod
-                                    ArrayList<String> subMethodKey = new ArrayList<>();
-                                    subMethodKey.add(m.getClassName());
-                                    subMethodKey.add(m.getMethodName());
-
+                                    SeerFlowMethod subMethodKey = new SeerFlowMethod();
+                                    subMethodKey.setClassName(m.getClassName());
+                                    subMethodKey.setMethodName(m.getMethodName());
                                     subMethodList.add(subMethodKey);
                                 }
                             }
@@ -67,13 +67,17 @@ public class FlowStructureService extends EvaluatorService {
             }
         }
 
-        try {
-            applicationStructureInJson = new ObjectMapper().writeValueAsString(formattedMap);
-        } catch (Exception e){
-            System.out.println(e.toString());
-        }
+        SeerFlowContext seerFlowContext = new SeerFlowContext();
+        seerFlowContext.setSeerFlowMethods(seerFlowMethods);
+        return seerFlowContext;
 
-        return context; // temporary, must implement use of context
+//        try {
+//            applicationStructureInJson = new ObjectMapper().writeValueAsString(formattedMap);
+//        } catch (Exception e){
+//            System.out.println(e.toString());
+//        }
+
+//        return context; // temporary, must implement use of context
         // deprecated
         //return applicationStructureInJson;
     }
