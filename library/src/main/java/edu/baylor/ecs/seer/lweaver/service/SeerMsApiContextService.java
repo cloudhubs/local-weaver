@@ -7,6 +7,8 @@ import edu.baylor.ecs.seer.common.entity.EntityModel;
 import javassist.CtClass;
 import javassist.CtMethod;
 import javassist.NotFoundException;
+import javassist.bytecode.AnnotationsAttribute;
+import javassist.bytecode.annotation.Annotation;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -15,16 +17,41 @@ import java.util.List;
 @Service
 public class SeerMsApiContextService {
 
+    private List<CtClass> getApiClasses(List<CtClass> allClasses){
+        List<CtClass> entityClasses = new ArrayList<>();
+        for (CtClass ctClass: allClasses
+        ) {
+            AnnotationsAttribute annotationsAttribute = (AnnotationsAttribute) ctClass.getClassFile().getAttribute(AnnotationsAttribute.visibleTag);
+            if(annotationsAttribute != null) {
+                Annotation[] annotations = annotationsAttribute.getAnnotations();
+                for (Annotation annotation : annotations) {
+                    if (annotation.getTypeName().equals("javax.ws.rs.Path")) {
+                        entityClasses.add(ctClass);
+                    }
+                }
+            }
+        }
+        return entityClasses;
+    }
+
     public SeerApiContext createSeerApiContext(List<CtClass> ctClassesApiIn){
+
         List<SeerApiMethod> apiMethods = new ArrayList<>();
-        for (CtClass ctClass: ctClassesApiIn){
+        List<CtClass> apiClasses = getApiClasses(ctClassesApiIn);
+        for (CtClass ctClass: apiClasses){
             CtMethod[] ctMethods = ctClass.getMethods();
             for (CtMethod ctMethod: ctMethods
                  ) {
-                apiMethods.add(createSeerApiMethod(ctClass, ctMethod));
+                SeerApiMethod seerApiMethod = createSeerApiMethod(ctClass, ctMethod);
+                if (seerApiMethod.getClassName().contains("edu.baylor.ecs.seer.usermanagement")){
+                    apiMethods.add(seerApiMethod);
+                }
+
+
             }
         }
         SeerApiContext seerApiContext = new SeerApiContext();
+        seerApiContext.setSeerApiMethods(apiMethods);
         return seerApiContext;
     }
 

@@ -1,9 +1,6 @@
 package edu.baylor.ecs.seer.lweaver.service;
 
-import edu.baylor.ecs.seer.common.context.SeerContext;
-import edu.baylor.ecs.seer.common.context.SeerMsContext;
-import edu.baylor.ecs.seer.common.context.SeerRequestContext;
-import edu.baylor.ecs.seer.common.context.SeerSecurityContext;
+import edu.baylor.ecs.seer.common.context.*;
 import edu.baylor.ecs.seer.common.entity.EntityModel;
 import javassist.CtClass;
 import javassist.bytecode.ClassFile;
@@ -29,8 +26,8 @@ public class SeerContextService {
     @Autowired
     private FlowStructureService flowService;
 
-    @Autowired
-    private BytecodeFlowStructureService byteCode;
+//    @Autowired
+//    private BytecodeFlowStructureService byteCode;
 
     @Autowired
     private SeerMsApiContextService apiSerivce;
@@ -76,12 +73,17 @@ public class SeerContextService {
 
             //getting rid of wars from java libraries
             if (msContext.getEntity().getEntities().size() > 0){
+
+                 SeerFlowContext seerFlowContext = flowService.process(ctClasses, new SeerContext());
+                 SeerApiContext seerApiContext = apiSerivce.createSeerApiContext(ctClasses);
+                msContext.setApi(seerApiContext);
+                msContext.setFlow(seerFlowContext);
+
                 msContexts.add(msContext);
-                flowService.process(ctClasses, new SeerContext());
             }
             //flows
 
-            byteCode.process(ctClasses);
+//            byteCode.process(ctClasses);
             //API
 
 

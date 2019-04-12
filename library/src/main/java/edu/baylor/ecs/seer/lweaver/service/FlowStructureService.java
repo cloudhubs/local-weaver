@@ -1,12 +1,13 @@
 package edu.baylor.ecs.seer.lweaver.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.baylor.ecs.seer.common.context.SeerContext;
 import edu.baylor.ecs.seer.common.context.SeerFlowContext;
 import edu.baylor.ecs.seer.common.flow.SeerFlowMethod;
 import javassist.CannotCompileException;
 import javassist.CtClass;
 import javassist.CtMethod;
+import javassist.bytecode.AnnotationsAttribute;
+import javassist.bytecode.annotation.Annotation;
 import javassist.expr.ExprEditor;
 import javassist.expr.MethodCall;
 import org.springframework.stereotype.Service;
@@ -22,7 +23,9 @@ import java.util.Map;
 @Service
 public class FlowStructureService {
 
-    protected final SeerFlowContext process(List<CtClass> classes, SeerContext context){
+
+
+    public SeerFlowContext process(List<CtClass> classes, SeerContext context){
         Map<SeerFlowMethod, List<SeerFlowMethod>> seerFlowMethods = new HashMap<>();
 //        Map<List<String>, List<List<String>>> formattedMap = new HashMap<>();
 
@@ -40,30 +43,34 @@ public class FlowStructureService {
                 seerFlowMethod.setClassName(clazz.getName());
                 seerFlowMethod.setMethodName(method.getName());
 
-                // Add the formattedKey to the formattedMap
-                seerFlowMethods.put(seerFlowMethod, new ArrayList<>());
+                if (seerFlowMethod.getClassName().contains("edu.baylor.ecs.seer.usermanagement")){
+                    // Add the formattedKey to the formattedMap
+                    seerFlowMethods.put(seerFlowMethod, new ArrayList<>());
 
 
-                // Instrument the method to pull out the method calls
-                try {
-                    method.instrument(
-                            new ExprEditor() {
-                                public void edit(MethodCall m) {
+                    // Instrument the method to pull out the method calls
+                    try {
+                        method.instrument(
+                                new ExprEditor() {
+                                    public void edit(MethodCall m) {
 
-                                    // Retrieve the list of subMethods
-                                    List<SeerFlowMethod> subMethodList = seerFlowMethods.get(seerFlowMethod);
+                                        // Retrieve the list of subMethods
+                                        List<SeerFlowMethod> subMethodList = seerFlowMethods.get(seerFlowMethod);
 
-                                    // Build the key for the subMethod
-                                    SeerFlowMethod subMethodKey = new SeerFlowMethod();
-                                    subMethodKey.setClassName(m.getClassName());
-                                    subMethodKey.setMethodName(m.getMethodName());
-                                    subMethodList.add(subMethodKey);
+                                        // Build the key for the subMethod
+                                        SeerFlowMethod subMethodKey = new SeerFlowMethod();
+                                        subMethodKey.setClassName(m.getClassName());
+                                        subMethodKey.setMethodName(m.getMethodName());
+                                        subMethodList.add(subMethodKey);
+                                    }
                                 }
-                            }
-                    );
-                } catch (CannotCompileException e){
-                    System.out.println(e.toString());
+                        );
+                    } catch (CannotCompileException e){
+                        System.out.println(e.toString());
+                    }
                 }
+
+
             }
         }
 
@@ -82,13 +89,13 @@ public class FlowStructureService {
         //return applicationStructureInJson;
     }
 
-    protected final boolean filter(CtClass clazz){
-
-        FlowStructureFilterContext filter =
-                new FlowStructureFilterContext(new FlowStructureFilterNameStrategy());
-
-        return filter.doFilter(clazz);
-
-    }
+//    protected final boolean filter(CtClass clazz){
+//
+//        FlowStructureFilterContext filter =
+//                new FlowStructureFilterContext(new FlowStructureFilterNameStrategy());
+//
+//        return filter.doFilter(clazz);
+//
+//    }
 
 }
