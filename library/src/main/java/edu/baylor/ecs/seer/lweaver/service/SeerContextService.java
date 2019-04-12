@@ -32,6 +32,9 @@ public class SeerContextService {
     @Autowired
     private BytecodeFlowStructureService byteCode;
 
+    @Autowired
+    private SeerMsApiContextService apiSerivce;
+
     private List<CtClass> allCtClasses;
 
     public SeerContext populateSeerContext(SeerContext seerContext){
@@ -63,21 +66,29 @@ public class SeerContextService {
             msContext.setModuleName(path.substring(path.lastIndexOf('/') + 1));
             List<CtClass> ctClasses = resourceService.getCtClasses(path, organizationPath);
             allCtClasses.addAll(ctClasses);
+            //entities
             msContext.setEntity(entityService.getSeerEntityContext(ctClasses));
             for (EntityModel e: msContext.getEntity().getEntities()
-                 ) {
+            ) {
                 e.setModuleName(msContext.getModuleName());
             }
+            //API
+
             //getting rid of wars from java libraries
             if (msContext.getEntity().getEntities().size() > 0){
                 msContexts.add(msContext);
+                flowService.process(ctClasses, new SeerContext());
             }
             //flows
-            flowService.process(ctClasses, new SeerContext());
+
             byteCode.process(ctClasses);
+            //API
+
+
         }
         return msContexts;
     }
+
 
     private SeerSecurityContext generateSecurityContext(SeerRequestContext req){
         return securityService.getMsSeerSecurityContext(this.allCtClasses, req);
