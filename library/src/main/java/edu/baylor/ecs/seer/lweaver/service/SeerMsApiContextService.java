@@ -104,14 +104,18 @@ public class SeerMsApiContextService {
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
         }
-        for (Object annotation: annotations
-             ) {
-            if (annotation.getClass().getName().equals("javax.ws.rs.GET")){
-                seerApiType = SeerApiType.OUT;
-            } else if (annotation.getClass().getName().equals("javax.ws.rs.POST")){
-                seerApiType = SeerApiType.IN;
-            }
+        EntityModel entityModel = getReturnType(ctMethod);
+        if (entityModel.getClassName().contains("edu.baylor.ecs.seer.usermanagement")){
+            seerApiType = SeerApiType.OUT;
         }
+//        for (Object annotation: annotations
+//             ) {
+//            if (annotation.getClass().getName().equals("javax.ws.rs.GET")){
+//                seerApiType = SeerApiType.OUT;
+//            } else if (annotation.getClass().getName().equals("javax.ws.rs.POST")){
+//                seerApiType = SeerApiType.IN;
+//            }
+//        }
         return seerApiType;
     }
 

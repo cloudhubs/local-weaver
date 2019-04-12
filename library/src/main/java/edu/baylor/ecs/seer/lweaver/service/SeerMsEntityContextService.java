@@ -182,7 +182,7 @@ public class SeerMsEntityContextService {
                     }
                 }
                 // Add the field to the entity
-                entityModel.addInstanceVariableModel(instanceVariableModel);
+                //entityModel.addInstanceVariableModel(instanceVariableModel);
                 //
                 seerFields.add(seerField);
             }

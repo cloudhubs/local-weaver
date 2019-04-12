@@ -61,7 +61,10 @@ public class FlowStructureService {
                                         SeerFlowMethod subMethodKey = new SeerFlowMethod();
                                         subMethodKey.setClassName(m.getClassName());
                                         subMethodKey.setMethodName(m.getMethodName());
-                                        subMethodList.add(subMethodKey);
+                                        if (subMethodKey.getClassName().contains("edu.baylor.ecs.seer.usermanagement")){
+                                            subMethodList.add(subMethodKey);
+                                        }
+
                                     }
                                 }
                         );
