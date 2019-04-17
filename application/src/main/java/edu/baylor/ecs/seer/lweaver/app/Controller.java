@@ -28,6 +28,12 @@ public class Controller {
         return context;
     }
 
+    @CrossOrigin(origins = "*")
+    @RequestMapping(path = "/analyze", method = RequestMethod.POST)
+    public SeerContext analyze(@RequestBody SeerContext seerContext) {
+        return seerContextService.populateSeerContext(seerContext);
+    }
+
 
 //    @RequestMapping(path = "/", method = RequestMethod.POST, produces = "application/json; charset=UTF-8", consumes = {"text/plain", "application/*"})
 //    @ResponseBody

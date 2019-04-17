@@ -1,7 +1,7 @@
 package edu.baylor.ecs.seer.lweaver.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import edu.baylor.ecs.seer.common.FlowNode;
+import edu.baylor.ecs.seer.common.entity.EntityModel;
+import edu.baylor.ecs.seer.common.flow.decision.*;
 import javassist.CtClass;
 import javassist.CtMethod;
 import javassist.bytecode.*;
@@ -22,12 +22,11 @@ import java.util.*;
 @Service
 public class BytecodeFlowStructureService {
 
-    public final List<Map<Integer, FlowNode>> process(List<CtClass> classes){
+    public final List<Map<Integer, DecisionFlowNode>> process(List<CtClass> classes){
         // Setup some initial objects
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         PrintStream out = new PrintStream(baos);
         FramePrinter fp = new FramePrinter(out);
-        String applicationStructureInJson = "";
 
         classes = getServiceClasses(classes);
 
@@ -158,8 +157,8 @@ public class BytecodeFlowStructureService {
 
     // TODO: refactor
     // Processing the bytecode will create a tree of nodes that will show the flow of the nodes
-    public List< Map<Integer, FlowNode> > processBytecode(String bytecode){
-        List< Map<Integer, FlowNode> > roots = new ArrayList<>();
+    public List< Map<Integer, DecisionFlowNode> > processBytecode(String bytecode){
+        List< Map<Integer, DecisionFlowNode> > roots = new ArrayList<>();
 
         // Filter out garbage lines in the bytecode
         List<String> processed = preprocessBytecode(bytecode);
@@ -167,13 +166,16 @@ public class BytecodeFlowStructureService {
         for(String s : processed) {
 
             // Initialize the map for post-processing
-            Map<Integer, FlowNode> map = new HashMap<>();
+            Map<Integer, DecisionFlowNode> map = new HashMap<>();
 
             // Split the method bytecode string based on newlines so each command is a different index
             String[] arr = s.split("\n");
 
-            FlowNode current = null;
-            FlowNode root = null;
+            DecisionFlowNode current = null;
+            DecisionFlowNode root = null;
+
+            // This will be the "root" of the graph
+            DecisionFlowMethod flowMethod = new DecisionFlowMethod();
 
             // Loop through every command, skipping the method header
             for(int i = 1; i < arr.length; i++) {
@@ -186,26 +188,21 @@ public class BytecodeFlowStructureService {
                     // Split the command into it's metadata
                     String[] split = line.trim().split(" ");
 
+                    DecisionFlowNode flowNode = null;
+
                     // Pull out the id and the body of the command
                     String id = split[0].substring(0, split[0].length() - 1);
                     String command = split[1];
                     String type = "general";
 
                     // Determine the type of the command
-                    if (command.equals("goto")){
-                        type = "goto";
-                    } else if (command.startsWith("if")) {
-                        type = "conditional";
+                    if (command.startsWith("if")) {
+                        flowNode = parseIfStatement(Integer.parseInt(id), arr);
                     } else if (command.startsWith("invoke")) {
-                        type = "method";
-                    } else if (command.contains("return")){
-                        type = "return";
+                        flowNode = new DecisionFlowGeneral();
+                        flowNode.setId(Integer.parseInt(id));
+                        ((DecisionFlowGeneral) flowNode).setDescription(command);
                     }
-
-                    // Create a new flowNode with id and type
-                    FlowNode flowNode = new FlowNode(id, type);
-                    // Set the flowNode's raw data
-                    flowNode.setRaw(line);
 
                     // Put the flowNode into the map for post-processing later
                     map.put(Integer.parseInt(id), flowNode);
@@ -224,38 +221,39 @@ public class BytecodeFlowStructureService {
             }
 
             // Post-Processing for building correct ordering
-            for (Map.Entry<Integer, FlowNode> entry : map.entrySet()){
-
-                // If the node is a conditional:
-                //      add the new child from map
-                if(entry.getValue().getType().equals("conditional")){
-                    String[] values = entry.getValue().getRaw().split(" ");
-                    Integer next = Integer.parseInt(values[2]);
-                    if (map.containsKey(next)) {
-                        FlowNode n = map.get(next);
-                        entry.getValue().addChild(n);
-                    }
-                }
-                // If the node is a goto
-                //      break the existing condition
-                //      add the new child from map
-                else if (entry.getValue().getType().equals("goto")){
-                    String[] values = entry.getValue().getRaw().split(" ");
-
-                    Iterator<Integer> it = entry.getValue().getChildren().iterator();
-                    while (it.hasNext()) {
-                        it.next();
-                        it.remove();
-                    }
-
-                    Integer next = Integer.parseInt(values[2]);
-                    if (map.containsKey(next)) {
-                        FlowNode n = map.get(next);
-                        entry.getValue().addChild(n);
-                    }
-                }
-
-            }
+//            for (Map.Entry<Integer, DecisionFlowNode> entry : map.entrySet()){
+//
+//                // If the node is a conditional:
+//                //      add the new child from map
+//                if(entry.getValue() instanceof DecisionFlowConditional){
+//
+//                    String[] values = entry.getValue().getRaw().split(" ");
+//                    Integer next = Integer.parseInt(values[2]);
+//                    if (map.containsKey(next)) {
+//                        DecisionFlowNode n = map.get(next);
+//                        entry.getValue().addChild(n);
+//                    }
+//                }
+//                // If the node is a goto
+//                //      break the existing condition
+//                //      add the new child from map
+//                else if (entry.getValue().getType().equals("goto")){
+//                    String[] values = entry.getValue().getRaw().split(" ");
+//
+//                    Iterator<Integer> it = entry.getValue().getChildren().iterator();
+//                    while (it.hasNext()) {
+//                        it.next();
+//                        it.remove();
+//                    }
+//
+//                    Integer next = Integer.parseInt(values[2]);
+//                    if (map.containsKey(next)) {
+//                        DecisionFlowNode n = map.get(next);
+//                        entry.getValue().addChild(n);
+//                    }
+//                }
+//
+//            }
 
             // If the tree exists then add it to the structure
             if(root != null) {
@@ -269,59 +267,87 @@ public class BytecodeFlowStructureService {
 
     // Post processing is optional but will remove any filler nodes so the only ones that remain are the initial
     // instruction and any logic nodes or method call nodes
-    public Map<Integer, FlowNode> postProcessBytecode(Map<Integer, FlowNode> map){
+    public Map<Integer, DecisionFlowNode> postProcessBytecode(Map<Integer, DecisionFlowNode> map){
 
         Set<Integer> importantNodes = new HashSet<>();
         importantNodes.add(0);
 
         // Filter out unimportant node
-        for (Map.Entry<Integer, FlowNode> entry : map.entrySet()){
-
-            String type = entry.getValue().getType();
-
-            // If it's a method or return then we want it so add
-            if(type.equals("method") || type.equals("return")){
-                importantNodes.add(entry.getKey());
-            }
-
-            // If it's a conditional or goto then we want the node and both its children, even if one of the children
-            // is a normal node
-            if(type.equals("conditional") || type.equals("goto")){
-                // Add the node
-                importantNodes.add(entry.getKey());
-                // Add the children
-                importantNodes.addAll(entry.getValue().getChildren());
-            }
-        }
+//        for (Map.Entry<Integer, DecisionFlowNode> entry : map.entrySet()){
+//
+//            String type = entry.getValue().getType();
+//
+//            // If it's a method or return then we want it so add
+//            if(type.equals("method") || type.equals("return")){
+//                importantNodes.add(entry.getKey());
+//            }
+//
+//            // If it's a conditional or goto then we want the node and both its children, even if one of the children
+//            // is a normal node
+//            if(type.equals("conditional") || type.equals("goto")){
+//                // Add the node
+//                importantNodes.add(entry.getKey());
+//                // Add the children
+//                importantNodes.addAll(entry.getValue().getChildren());
+//            }
+//        }
 
         // Sort the list of nodes by their key
         List<Integer> sortedList = new ArrayList<>(importantNodes);
         Collections.sort(sortedList);
 
         // Rebuild tree
-        for(int i = 0; i < sortedList.size() - 1; i++){
-            Integer key = sortedList.get(i);
-            // If it is a conditional or a goto node then it's children are already correct
-            if (map.containsKey(key)) {
-                if (!map.get(key).getType().equals("conditional") && !map.get(key).getType().equals("goto")) {
-                    // Clear the existing children and add the next child
-                    map.get(key).setChildren(new ArrayList<>());
-                    map.get(sortedList.get(i + 1)).setParents(new ArrayList<>());
-                    map.get(key).addChild(map.get(sortedList.get(i + 1)));
-                } else if (map.get(key).getType().equals("goto")) {
-                    map.get(sortedList.get(i + 1)).removeParent(map.get(key));
-                }
-            }
-        }
+//        for(int i = 0; i < sortedList.size() - 1; i++){
+//            Integer key = sortedList.get(i);
+//            // If it is a conditional or a goto node then it's children are already correct
+//            if (map.containsKey(key)) {
+//                if (!map.get(key).getType().equals("conditional") && !map.get(key).getType().equals("goto")) {
+//                    // Clear the existing children and add the next child
+//                    map.get(key).setChildren(new ArrayList<>());
+//                    map.get(sortedList.get(i + 1)).setParents(new ArrayList<>());
+//                    map.get(key).addChild(map.get(sortedList.get(i + 1)));
+//                } else if (map.get(key).getType().equals("goto")) {
+//                    map.get(sortedList.get(i + 1)).removeParent(map.get(key));
+//                }
+//            }
+//        }
 
         // Remove any nodes from the map that aren't needed anymore
         Iterator<Integer> it = map.keySet().iterator();
         map.keySet().removeIf(e -> !sortedList.contains(e));
 
         // Sort the map
-        Map<Integer, FlowNode> sortedMap = new TreeMap<>(map);
+        Map<Integer, DecisionFlowNode> sortedMap = new TreeMap<>(map);
 
         // Return the first node
         return sortedMap;
+    }
+
+    private DecisionFlowConditional parseIfStatement(int id, String[] bytecodeLines) {
+        String bytecode = bytecodeLines[id];
+        DecisionFlowConditional flowConditional = new DecisionFlowConditional();
+        flowConditional.setId(id);
+        if (bytecode.equals("if_acmple")) {
+            flowConditional.setDecisionOperator(DecisionOperator.LESS_OR_EQUAL);
+            String op1;
+            String op2;
+            String op1Line = bytecodeLines[id - 1];
+            String op2Line = bytecodeLines[id - 2];
+            if (op1Line.contains("_")) {
+                op1 = "local variable " + op1Line.split("_")[1];
+            } else {
+                op1 = op1Line.split(" ")[1];
+            }
+            if (op2Line.contains("_")) {
+                op2 = "local variable " + op2Line.split("_")[1];
+            } else {
+                op2 = op1Line.split(" ")[1];
+            }
+            flowConditional.setLeft(op1);
+            flowConditional.setRight(op2);
+        } else {
+            return null;
+        }
+        return flowConditional;
     }
 }

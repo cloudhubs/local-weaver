@@ -1,6 +1,6 @@
 package edu.baylor.ecs.seer.lweaver.aspect;
 
-import edu.baylor.ecs.seer.common.FlowNode;
+import edu.baylor.ecs.seer.common.flow.decision.DecisionFlowNode;
 import javassist.CtClass;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -70,7 +70,7 @@ public class DataLoggingAspect {
         logger.info(name + " [Processing bytecode into node graphs ... ]");
         Object o = joinPoint.proceed();
         if(o instanceof List<?>){
-            List<Map<Integer, FlowNode>> genericList = (List<Map<Integer, FlowNode>>)o;
+            List<Map<Integer, DecisionFlowNode>> genericList = (List<Map<Integer, DecisionFlowNode>>)o;
             resetLogger(joinPoint);
             logger.info(name + " [Processed graphs for " + genericList.size() + " methods.]");
         }
