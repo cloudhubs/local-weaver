@@ -155,7 +155,6 @@ public class BytecodeFlowStructureService {
         return storage;
     }
 
-    // TODO: refactor
     // Processing the bytecode will create a tree of nodes that will show the flow of the nodes
     public List< Map<Integer, DecisionFlowNode> > processBytecode(String bytecode){
         List< Map<Integer, DecisionFlowNode> > roots = new ArrayList<>();
@@ -188,35 +187,40 @@ public class BytecodeFlowStructureService {
                     // Split the command into it's metadata
                     String[] split = line.trim().split(" ");
 
-                    DecisionFlowNode flowNode = null;
+                    DecisionFlowNode flowNode;
 
                     // Pull out the id and the body of the command
-                    String id = split[0].substring(0, split[0].length() - 1);
+                    int id = Integer.parseInt(split[0].substring(0, split[0].length() - 1));
                     String command = split[1];
-                    String type = "general";
 
                     // Determine the type of the command
                     if (command.startsWith("if")) {
-                        flowNode = parseIfStatement(Integer.parseInt(id), arr);
+                        flowNode = parseIfStatement(id, arr);
                     } else if (command.startsWith("invoke")) {
-                        flowNode = new DecisionFlowGeneral();
-                        flowNode.setId(Integer.parseInt(id));
-                        ((DecisionFlowGeneral) flowNode).setDescription(command);
-                    }
-
-                    // Put the flowNode into the map for post-processing later
-                    map.put(Integer.parseInt(id), flowNode);
-
-                    // If the root to this tree is null, initialize a new root
-                    if (current == null) {
-                        current = flowNode;
-                        // Set the superroot
-                        root = current;
+                        flowNode = parseMethodStatement(id, arr);
                     } else {
-                        // If there is a currentNode then assume sequential ordering and add the new child
-                        current.addChild(flowNode);
-                        current = flowNode;
+                        flowNode = parseGeneralStatement(id, arr);
                     }
+                    // Update links
+                    if (flowMethod.getChildren().size() > 0) {
+                        flowNode.getParents().add(flowMethod.getChildren().get(flowMethod.getChildren().size() - 1));
+                        flowMethod.getChildren().get(flowMethod.getChildren().size() - 1).getChildren().add(flowNode);
+                    }
+                    flowMethod.getChildren().add(flowNode);
+//
+//                    // Put the flowNode into the map for post-processing later
+//                    map.put(id, flowNode);
+//
+//                    // If the root to this tree is null, initialize a new root
+//                    if (current == null) {
+//                        current = flowNode;
+//                        // Set the superroot
+//                        root = current;
+//                    } else {
+//                        // If there is a currentNode then assume sequential ordering and add the new child
+//                        current.addChild(flowNode);
+//                        current = flowNode;
+//                    }
                 }
             }
 
@@ -255,11 +259,11 @@ public class BytecodeFlowStructureService {
 //
 //            }
 
-            // If the tree exists then add it to the structure
-            if(root != null) {
-                // Before adding it, post-process the map
-                roots.add(postProcessBytecode(map));
-            }
+//            // If the tree exists then add it to the structure
+//            if(root != null) {
+//                // Before adding it, post-process the map
+//                roots.add(postProcessBytecode(map));
+//            }
         }
 
         return roots;
@@ -327,7 +331,7 @@ public class BytecodeFlowStructureService {
         String bytecode = bytecodeLines[id];
         DecisionFlowConditional flowConditional = new DecisionFlowConditional();
         flowConditional.setId(id);
-        if (bytecode.equals("if_acmple")) {
+        if (bytecode.contains("if_acmple")) {
             flowConditional.setDecisionOperator(DecisionOperator.LESS_OR_EQUAL);
             String op1;
             String op2;
@@ -349,5 +353,24 @@ public class BytecodeFlowStructureService {
             return null;
         }
         return flowConditional;
+    }
+
+    private DecisionFlowMethod parseMethodStatement(int id, String[] bytecodeLines) {
+        String bytecode = bytecodeLines[id];
+        DecisionFlowMethod flowMethod = new DecisionFlowMethod();
+        flowMethod.setId(id);
+
+        // TODO: parse method info
+
+        return flowMethod;
+    }
+
+    private DecisionFlowGeneral parseGeneralStatement(int id, String[] bytecodeLines) {
+        String bytecode = bytecodeLines[id];
+        DecisionFlowGeneral flowGeneral = new DecisionFlowGeneral();
+        flowGeneral.setId(id);
+        flowGeneral.setDescription(bytecode.split(":")[1].trim());
+
+        return flowGeneral;
     }
 }
