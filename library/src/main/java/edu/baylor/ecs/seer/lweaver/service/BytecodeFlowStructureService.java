@@ -163,22 +163,18 @@ public class BytecodeFlowStructureService {
         List<String> processed = preprocessBytecode(bytecode);
 
         for(String s : processed) {
-
-            // Initialize the map for post-processing
-            Map<Integer, DecisionFlowNode> map = new HashMap<>();
-
             // Split the method bytecode string based on newlines so each command is a different index
             String[] arr = s.split("\n");
 
-            DecisionFlowNode current = null;
-            DecisionFlowNode root = null;
+            DecisionFlowNode cur = null;
+            DecisionFlowNode prev = null;
 
             // This will be the "root" of the graph
             DecisionFlowMethod flowMethod = new DecisionFlowMethod();
+            cur = flowMethod;
 
             // Loop through every command, skipping the method header
             for(int i = 1; i < arr.length; i++) {
-
                 // Get the current command
                 String line = arr[i];
 
@@ -201,69 +197,16 @@ public class BytecodeFlowStructureService {
                     } else {
                         flowNode = parseGeneralStatement(id, arr);
                     }
+                    prev = cur;
+                    cur = flowNode;
+
                     // Update links
-                    if (flowMethod.getChildren().size() > 0) {
-                        flowNode.getParents().add(flowMethod.getChildren().get(flowMethod.getChildren().size() - 1));
-                        flowMethod.getChildren().get(flowMethod.getChildren().size() - 1).getChildren().add(flowNode);
-                    }
-                    flowMethod.getChildren().add(flowNode);
-//
-//                    // Put the flowNode into the map for post-processing later
-//                    map.put(id, flowNode);
-//
-//                    // If the root to this tree is null, initialize a new root
-//                    if (current == null) {
-//                        current = flowNode;
-//                        // Set the superroot
-//                        root = current;
-//                    } else {
-//                        // If there is a currentNode then assume sequential ordering and add the new child
-//                        current.addChild(flowNode);
-//                        current = flowNode;
-//                    }
+                    cur.getParents().add(prev);
+                    prev.getChildren().add(cur);
                 }
             }
 
-            // Post-Processing for building correct ordering
-//            for (Map.Entry<Integer, DecisionFlowNode> entry : map.entrySet()){
-//
-//                // If the node is a conditional:
-//                //      add the new child from map
-//                if(entry.getValue() instanceof DecisionFlowConditional){
-//
-//                    String[] values = entry.getValue().getRaw().split(" ");
-//                    Integer next = Integer.parseInt(values[2]);
-//                    if (map.containsKey(next)) {
-//                        DecisionFlowNode n = map.get(next);
-//                        entry.getValue().addChild(n);
-//                    }
-//                }
-//                // If the node is a goto
-//                //      break the existing condition
-//                //      add the new child from map
-//                else if (entry.getValue().getType().equals("goto")){
-//                    String[] values = entry.getValue().getRaw().split(" ");
-//
-//                    Iterator<Integer> it = entry.getValue().getChildren().iterator();
-//                    while (it.hasNext()) {
-//                        it.next();
-//                        it.remove();
-//                    }
-//
-//                    Integer next = Integer.parseInt(values[2]);
-//                    if (map.containsKey(next)) {
-//                        DecisionFlowNode n = map.get(next);
-//                        entry.getValue().addChild(n);
-//                    }
-//                }
-//
-//            }
-
-//            // If the tree exists then add it to the structure
-//            if(root != null) {
-//                // Before adding it, post-process the map
-//                roots.add(postProcessBytecode(map));
-//            }
+            flowMethod = postProcessBytecode(flowMethod);
         }
 
         return roots;
@@ -271,60 +214,20 @@ public class BytecodeFlowStructureService {
 
     // Post processing is optional but will remove any filler nodes so the only ones that remain are the initial
     // instruction and any logic nodes or method call nodes
-    public Map<Integer, DecisionFlowNode> postProcessBytecode(Map<Integer, DecisionFlowNode> map){
+    public DecisionFlowMethod postProcessBytecode(DecisionFlowMethod method) {
+        // Build a map allowing easy access to each node in the list by id
+        Map<Integer, DecisionFlowNode> idToNode = new HashMap<>();
 
-        Set<Integer> importantNodes = new HashSet<>();
-        importantNodes.add(0);
+        // Assume that each node will have one or zero children
+        DecisionFlowNode node = method.getChildren().stream().findFirst().orElse(null);
+        while (node != null) {
+            idToNode.put(node.getId(), node);
+            node = node.getChildren().stream().findFirst().orElse(null);
+        }
 
-        // Filter out unimportant node
-//        for (Map.Entry<Integer, DecisionFlowNode> entry : map.entrySet()){
-//
-//            String type = entry.getValue().getType();
-//
-//            // If it's a method or return then we want it so add
-//            if(type.equals("method") || type.equals("return")){
-//                importantNodes.add(entry.getKey());
-//            }
-//
-//            // If it's a conditional or goto then we want the node and both its children, even if one of the children
-//            // is a normal node
-//            if(type.equals("conditional") || type.equals("goto")){
-//                // Add the node
-//                importantNodes.add(entry.getKey());
-//                // Add the children
-//                importantNodes.addAll(entry.getValue().getChildren());
-//            }
-//        }
 
-        // Sort the list of nodes by their key
-        List<Integer> sortedList = new ArrayList<>(importantNodes);
-        Collections.sort(sortedList);
 
-        // Rebuild tree
-//        for(int i = 0; i < sortedList.size() - 1; i++){
-//            Integer key = sortedList.get(i);
-//            // If it is a conditional or a goto node then it's children are already correct
-//            if (map.containsKey(key)) {
-//                if (!map.get(key).getType().equals("conditional") && !map.get(key).getType().equals("goto")) {
-//                    // Clear the existing children and add the next child
-//                    map.get(key).setChildren(new ArrayList<>());
-//                    map.get(sortedList.get(i + 1)).setParents(new ArrayList<>());
-//                    map.get(key).addChild(map.get(sortedList.get(i + 1)));
-//                } else if (map.get(key).getType().equals("goto")) {
-//                    map.get(sortedList.get(i + 1)).removeParent(map.get(key));
-//                }
-//            }
-//        }
-
-        // Remove any nodes from the map that aren't needed anymore
-        Iterator<Integer> it = map.keySet().iterator();
-        map.keySet().removeIf(e -> !sortedList.contains(e));
-
-        // Sort the map
-        Map<Integer, DecisionFlowNode> sortedMap = new TreeMap<>(map);
-
-        // Return the first node
-        return sortedMap;
+        return null;
     }
 
     private DecisionFlowConditional parseIfStatement(int id, String[] bytecodeLines) {
