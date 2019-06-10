@@ -43,7 +43,7 @@ public class FlowStructureService {
                 seerFlowMethod.setClassName(clazz.getName());
                 seerFlowMethod.setMethodName(method.getName());
 
-                if (seerFlowMethod.getClassName().contains("edu.baylor.ecs.seer.usermanagement")){
+                //if (seerFlowMethod.getClassName().contains("edu.baylor.ecs.seer.usermanagement")){
                     // Add the formattedKey to the formattedMap
                     seerFlowMethods.put(seerFlowMethod, new ArrayList<>());
 
@@ -71,7 +71,7 @@ public class FlowStructureService {
                     } catch (CannotCompileException e){
                         System.out.println(e.toString());
                     }
-                }
+                //}
 
 
             }

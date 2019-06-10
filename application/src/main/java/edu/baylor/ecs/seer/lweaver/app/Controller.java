@@ -2,7 +2,6 @@ package edu.baylor.ecs.seer.lweaver.app;
 
 import edu.baylor.ecs.seer.common.SampleObject;
 import edu.baylor.ecs.seer.common.context.SeerContext;
-//import edu.baylor.ecs.seer.lweaver.service.JavassistClassService;
 import edu.baylor.ecs.seer.lweaver.service.SeerContextService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
