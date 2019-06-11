@@ -2,6 +2,7 @@ package edu.baylor.ecs.seer.lweaver.service;
 
 import edu.baylor.ecs.seer.common.context.SeerContext;
 import edu.baylor.ecs.seer.common.context.SeerFlowContext;
+import edu.baylor.ecs.seer.common.context.SeerFlowMethodRepresentation;
 import edu.baylor.ecs.seer.common.flow.SeerFlowMethod;
 import javassist.CannotCompileException;
 import javassist.CtClass;
@@ -26,8 +27,9 @@ public class FlowStructureService {
 
 
     public SeerFlowContext process(List<CtClass> classes, SeerContext context){
-        Map<SeerFlowMethod, List<SeerFlowMethod>> seerFlowMethods = new HashMap<>();
-//        Map<List<String>, List<List<String>>> formattedMap = new HashMap<>();
+        List<SeerFlowMethodRepresentation> methodRepresentations = new ArrayList<>();
+        // <SeerFlowMethod, List<SeerFlowMethod>> seerFlowMethods = new HashMap<>();
+        // Map<List<String>, List<List<String>>> formattedMap = new HashMap<>();
 
         // Loop through every class in the array
         for(CtClass clazz : classes){
@@ -43,42 +45,39 @@ public class FlowStructureService {
                 seerFlowMethod.setClassName(clazz.getName());
                 seerFlowMethod.setMethodName(method.getName());
 
-                //if (seerFlowMethod.getClassName().contains("edu.baylor.ecs.seer.usermanagement")){
-                    // Add the formattedKey to the formattedMap
-                    seerFlowMethods.put(seerFlowMethod, new ArrayList<>());
+                SeerFlowMethodRepresentation representation = new SeerFlowMethodRepresentation(seerFlowMethod, new ArrayList<>());
 
+                // Instrument the method to pull out the method calls
+                try {
+                    method.instrument(
+                        new ExprEditor() {
+                            public void edit(MethodCall m) {
 
-                    // Instrument the method to pull out the method calls
-                    try {
-                        method.instrument(
-                                new ExprEditor() {
-                                    public void edit(MethodCall m) {
+                                // Retrieve the list of subMethods
+                                List<SeerFlowMethod> subMethodList = representation.getChildren();
 
-                                        // Retrieve the list of subMethods
-                                        List<SeerFlowMethod> subMethodList = seerFlowMethods.get(seerFlowMethod);
-
-                                        // Build the key for the subMethod
-                                        SeerFlowMethod subMethodKey = new SeerFlowMethod();
-                                        subMethodKey.setClassName(m.getClassName());
-                                        subMethodKey.setMethodName(m.getMethodName());
-                                        if (subMethodKey.getClassName().contains("edu.baylor.ecs.seer.usermanagement")){
-                                            subMethodList.add(subMethodKey);
-                                        }
-
-                                    }
+                                // Build the key for the subMethod
+                                SeerFlowMethod subMethodKey = new SeerFlowMethod();
+                                subMethodKey.setClassName(m.getClassName());
+                                subMethodKey.setMethodName(m.getMethodName());
+                                if (subMethodKey.getClassName().contains("edu.baylor.ecs.seer.usermanagement")){
+                                    subMethodList.add(subMethodKey);
                                 }
-                        );
-                    } catch (CannotCompileException e){
-                        System.out.println(e.toString());
-                    }
-                //}
 
+                            }
+                        }
+                    );
+                } catch (CannotCompileException e){
+                    System.out.println(e.toString());
+                }
+
+                methodRepresentations.add(representation);
 
             }
         }
 
         SeerFlowContext seerFlowContext = new SeerFlowContext();
-        seerFlowContext.setSeerFlowMethods(seerFlowMethods);
+        seerFlowContext.setSeerFlowMethods(methodRepresentations);
         return seerFlowContext;
 
 //        try {

@@ -5,6 +5,7 @@ import edu.baylor.ecs.seer.common.entity.EntityModel;
 import javassist.CtClass;
 import javassist.bytecode.ClassFile;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -25,6 +26,9 @@ public class SeerContextService {
 
     @Autowired
     private FlowStructureService flowService;
+
+    @Autowired
+    private Environment env;
 
 //    @Autowired
 //    private BytecodeFlowStructureService byteCode;
@@ -56,11 +60,18 @@ public class SeerContextService {
     private List<SeerMsContext> generateMsContexts(List<String> resourcePaths, String organizationPath){
         List<SeerMsContext> msContexts = new ArrayList<>();
         allCtClasses = new ArrayList<>();
+        boolean isWindows = env.getProperty("platform.isWindows").equals("true");
+
         for (String path: resourcePaths
         ) {
             SeerMsContext msContext = new SeerMsContext();
             System.out.println(path);
-            msContext.setModuleName(path.substring(path.lastIndexOf('/') + 1));
+            int lastIndex = path.lastIndexOf('.');
+            if(isWindows) {
+                msContext.setModuleName(path.substring(path.lastIndexOf('\\') + 1, lastIndex));
+            } else {
+                msContext.setModuleName(path.substring(path.lastIndexOf('/') + 1, lastIndex));
+            }
             List<CtClass> ctClasses = resourceService.getCtClasses(path, organizationPath);
             allCtClasses.addAll(ctClasses);
             //entities

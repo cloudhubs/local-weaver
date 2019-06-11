@@ -7,6 +7,7 @@ import edu.baylor.ecs.seer.common.context.SeerRequestContext;
 import javassist.ClassPool;
 import javassist.CtClass;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Service;
 import org.springframework.core.io.Resource;
@@ -34,6 +35,9 @@ public class ResourceService {
     @Autowired
     private ResourceLoader resourceLoader;
 
+    @Autowired
+    private Environment env;
+
     /**
      * Paths to all compiled jar packages
      * @param folderPath
@@ -58,7 +62,10 @@ public class ResourceService {
                                 !String.valueOf(path).toLowerCase().contains("/.mvn/") &&
                                 !String.valueOf(path).toLowerCase().startsWith("/usr/lib/jvm/") &&
                                 !String.valueOf(path).toLowerCase().contains("/target/dependency/") &&
-                                !String.valueOf(path).toLowerCase().contains("/gradle");
+                                !String.valueOf(path).toLowerCase().contains("/gradle") &&
+                                !String.valueOf(path).toLowerCase().contains("\\.mvn\\") &&
+                                !String.valueOf(path).toLowerCase().contains("\\target\\dependency") &&
+                                !String.valueOf(path).toLowerCase().contains("\\gradle");
                     })
                     .collect(Collectors.toList());
         } catch(Exception e){
@@ -103,7 +110,12 @@ public class ResourceService {
      * @return
      */
     private Resource getResource(String file){
-        return resourceLoader.getResource("file:" + file);
+        boolean isWindows = env.getProperty("platform.isWindows").equals("true");
+        if(isWindows) {
+            return resourceLoader.getResource("file:/" + file);
+        } else {
+            return resourceLoader.getResource("file:" + file);
+        }
     }
 
     /**

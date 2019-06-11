@@ -19,21 +19,11 @@ public class Controller {
     @CrossOrigin(origins = "*")
     @RequestMapping(path = "/", method = RequestMethod.POST, produces = "application/json; charset=UTF-8", consumes = {"text/plain", "application/*"})
     @ResponseBody
-    public String generateSeerContext(@RequestBody SampleObject sampleObject) {
+    public SeerContext generateSeerContext(@RequestBody SampleObject sampleObject) {
         SeerContext context = new SeerContext();
         context.setRequest(sampleObject.getRequest());
         context = seerContextService.populateSeerContext(context);
-
-        ObjectMapper objectMapper = new ObjectMapper();
-
-        String json = null;
-        try {
-            json = objectMapper.writeValueAsString(context);
-        } catch (JsonProcessingException e) {
-            e.printStackTrace();
-        }
-
-        return json;
+        return context;
     }
 
 //    @RequestMapping(path = "/", method = RequestMethod.POST, produces = "application/json; charset=UTF-8", consumes = {"text/plain", "application/*"})
