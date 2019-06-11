@@ -70,6 +70,7 @@ public class SeerMsApiContextService {
 
     private EntityModel getParameterType(CtMethod ctMethod) {
         EntityModel entityModel = new EntityModel();
+        entityModel.init();
         try {
             CtClass[] parameterTypes = ctMethod.getParameterTypes();
             for (CtClass p: parameterTypes) {
@@ -85,6 +86,7 @@ public class SeerMsApiContextService {
 
     private EntityModel getReturnType(CtMethod ctMethod) {
         EntityModel entityModel = new EntityModel();
+        entityModel.init();
         try {
             CtClass ctClass = ctMethod.getReturnType();
             entityModel.setClassNameShort(ctClass.getSimpleName());
