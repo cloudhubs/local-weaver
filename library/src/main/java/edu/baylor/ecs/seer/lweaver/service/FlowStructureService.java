@@ -2,21 +2,17 @@ package edu.baylor.ecs.seer.lweaver.service;
 
 import edu.baylor.ecs.seer.common.context.SeerContext;
 import edu.baylor.ecs.seer.common.context.SeerFlowContext;
-import edu.baylor.ecs.seer.common.context.SeerFlowMethodRepresentation;
+import edu.baylor.ecs.seer.common.entity.SeerFlowMethodRepresentation;
 import edu.baylor.ecs.seer.common.flow.SeerFlowMethod;
 import javassist.CannotCompileException;
 import javassist.CtClass;
 import javassist.CtMethod;
-import javassist.bytecode.AnnotationsAttribute;
-import javassist.bytecode.annotation.Annotation;
 import javassist.expr.ExprEditor;
 import javassist.expr.MethodCall;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Generates flow
@@ -24,12 +20,8 @@ import java.util.Map;
 @Service
 public class FlowStructureService {
 
-
-
-    public SeerFlowContext process(List<CtClass> classes, SeerContext context){
+    public SeerFlowContext process(List<CtClass> classes){
         List<SeerFlowMethodRepresentation> methodRepresentations = new ArrayList<>();
-        // <SeerFlowMethod, List<SeerFlowMethod>> seerFlowMethods = new HashMap<>();
-        // Map<List<String>, List<List<String>>> formattedMap = new HashMap<>();
 
         // Loop through every class in the array
         for(CtClass clazz : classes){
@@ -45,7 +37,7 @@ public class FlowStructureService {
                 seerFlowMethod.setClassName(clazz.getName());
                 seerFlowMethod.setMethodName(method.getName());
 
-                SeerFlowMethodRepresentation representation = new SeerFlowMethodRepresentation(seerFlowMethod, new ArrayList<>());
+                SeerFlowMethodRepresentation representation = new SeerFlowMethodRepresentation(clazz.getName(), method.getName(), new ArrayList<>());
 
                 // Instrument the method to pull out the method calls
                 try {
@@ -60,10 +52,7 @@ public class FlowStructureService {
                                 SeerFlowMethod subMethodKey = new SeerFlowMethod();
                                 subMethodKey.setClassName(m.getClassName());
                                 subMethodKey.setMethodName(m.getMethodName());
-                                if (subMethodKey.getClassName().contains("edu.baylor.ecs.seer.usermanagement")){
-                                    subMethodList.add(subMethodKey);
-                                }
-
+                                subMethodList.add(subMethodKey);
                             }
                         }
                     );
@@ -79,25 +68,5 @@ public class FlowStructureService {
         SeerFlowContext seerFlowContext = new SeerFlowContext();
         seerFlowContext.setSeerFlowMethods(methodRepresentations);
         return seerFlowContext;
-
-//        try {
-//            applicationStructureInJson = new ObjectMapper().writeValueAsString(formattedMap);
-//        } catch (Exception e){
-//            System.out.println(e.toString());
-//        }
-
-//        return context; // temporary, must implement use of context
-        // deprecated
-        //return applicationStructureInJson;
     }
-
-//    protected final boolean filter(CtClass clazz){
-//
-//        FlowStructureFilterContext filter =
-//                new FlowStructureFilterContext(new FlowStructureFilterNameStrategy());
-//
-//        return filter.doFilter(clazz);
-//
-//    }
-
 }

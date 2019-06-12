@@ -28,10 +28,7 @@ public class SeerContextService {
     private FlowStructureService flowService;
 
     @Autowired
-    private Environment env;
-
-//    @Autowired
-//    private BytecodeFlowStructureService byteCode;
+    private BytecodeFlowStructureService bytecodeService;
 
     @Autowired
     private SeerMsApiContextService apiSerivce;
@@ -63,8 +60,7 @@ public class SeerContextService {
         boolean isWindows = System.getProperty("os.name")
                 .toLowerCase().startsWith("windows");
 
-        for (String path: resourcePaths
-        ) {
+        for (String path: resourcePaths) {
             SeerMsContext msContext = new SeerMsContext();
             System.out.println(path);
             int lastIndex = path.lastIndexOf('.');
@@ -86,10 +82,12 @@ public class SeerContextService {
             //getting rid of wars from java libraries
             if (msContext.getEntity().getEntities().size() > 0){
 
-                 SeerFlowContext seerFlowContext = flowService.process(ctClasses, new SeerContext());
-                 SeerApiContext seerApiContext = apiSerivce.createSeerApiContext(ctClasses);
-                msContext.setApi(seerApiContext);
+                SeerFlowContext seerFlowContext = flowService.process(ctClasses);
+                bytecodeService.process(seerFlowContext);
                 msContext.setFlow(seerFlowContext);
+
+                SeerApiContext seerApiContext = apiSerivce.createSeerApiContext(ctClasses);
+                msContext.setApi(seerApiContext);
 
             }
             msContexts.add(msContext);

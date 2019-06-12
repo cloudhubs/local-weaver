@@ -2,8 +2,12 @@ package edu.baylor.ecs.seer.lweaver.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.baylor.ecs.seer.common.FlowNode;
+import edu.baylor.ecs.seer.common.context.SeerFlowContext;
+import edu.baylor.ecs.seer.common.entity.SeerFlowMethodRepresentation;
+import javassist.ClassPool;
 import javassist.CtClass;
 import javassist.CtMethod;
+import javassist.NotFoundException;
 import javassist.bytecode.*;
 import javassist.bytecode.analysis.FramePrinter;
 import javassist.bytecode.annotation.Annotation;
@@ -26,98 +30,49 @@ public class BytecodeFlowStructureService {
     @Autowired
     BytecodeFlowStructureService self;
 
-    public final String process(List<CtClass> classes){
-        // Setup some initial objects
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        PrintStream out = new PrintStream(baos);
-        FramePrinter fp = new FramePrinter(out);
-        FramePrinter fpSout = new FramePrinter(System.out);
-        String applicationStructureInJson = "";
-
-        classes = self.getServiceClasses(classes);
-
+    public final SeerFlowContext process(SeerFlowContext flowContext){
 
         // Loop through every class in the array
-        for(CtClass clazz : classes){
+        for(SeerFlowMethodRepresentation methodRepresentation : flowContext.getSeerFlowMethods()) {
 
-//            ClassFile cf = clazz.getClassFile();
-//            MethodInfo minfo = cf.getMethod("move");    // we assume move is not overloaded.
-//            CodeAttribute ca = minfo.getCodeAttribute();
-//            CodeIterator ci = ca.iterator();
-//            while (ci.hasNext()) {
-//                int index = 0;
-//                try {
-//                    index = ci.next();
-//                } catch (BadBytecode badBytecode) {
-//                    badBytecode.printStackTrace();
-//                }
-//                int op = ci.byteAt(index);
-//                System.out.println(Mnemonic.OPCODE[op]);
-//            }
+            // Setup some initial objects
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            PrintStream out = new PrintStream(baos);
+            FramePrinter fp = new FramePrinter(out);
 
-            // Retrieve all the methods of a class
-            CtMethod[] methods = clazz.getDeclaredMethods();
+            CtClass clazz = null;
+            try {
+                clazz = ClassPool.getDefault().getCtClass(methodRepresentation.getClassName());
+            } catch (NotFoundException e) {
+                System.out.println(e.toString());
+            }
 
-            // Loop through every method
-            for(CtMethod method : methods){
+            if (clazz == null) {
+                methodRepresentation.setNodes(new TreeMap<>());
+                continue;
+            }
 
-                try {
-                    if(!method.getName().startsWith("get") && !method.getName().startsWith("set")) {
-                        fp.print(method);
-                        //fpSout.print(method);
-                    }
-                } catch (Exception e){
-                    System.out.println(e.toString());
+            CtMethod method = null;
+            try {
+                method = clazz.getDeclaredMethod(methodRepresentation.getMethodName());
+
+                if (method != null) {
+                    fp.print(method);
                 }
 
-
+            } catch (Exception e) {
+                System.out.println(e.toString());
             }
+
+            // Retrieve the bytecode from the ByteArrayOutputStream
+            String bytecode = new String(baos.toByteArray(), StandardCharsets.UTF_8);
+
+            // Build the structure for parsing
+            Map<Integer, FlowNode> nodes = self.processBytecode(bytecode);
+            methodRepresentation.setNodes(nodes);
         }
 
-        // Retrieve the bytecode from the ByteArrayOutputStream
-        String bytecode = new String(baos.toByteArray(), StandardCharsets.UTF_8);
-
-        // Build the structure for parsing
-        List<Map<Integer, FlowNode>> trees = self.processBytecode(bytecode);
-
-        try {
-            applicationStructureInJson = new ObjectMapper().writeValueAsString(trees);
-        } catch (Exception e){
-            System.out.println(e.toString());
-        }
-
-        return applicationStructureInJson;
-        //return sb.toString();
-    }
-
-//    public final boolean filter(CtClass clazz){
-//        AnnotationsAttribute annotationsAttribute = (AnnotationsAttribute) clazz.getClassFile().getAttribute(AnnotationsAttribute.visibleTag);
-//        if(annotationsAttribute != null) {
-//            Annotation[] annotations = annotationsAttribute.getAnnotations();
-//            for (Annotation annotation : annotations) {
-//                if (annotation.getTypeName().equals("org.springframework.stereotype.Service") || annotation.getTypeName().equals("org.springframework.stereotype.Component")){
-//                    return true;
-//                }
-//            }
-//        }
-//        return false;
-//    }
-
-    private List<CtClass> getServiceClasses(List<CtClass> allClasses){
-        List<CtClass> entityClasses = new ArrayList<>();
-        for (CtClass ctClass: allClasses
-        ) {
-            AnnotationsAttribute annotationsAttribute = (AnnotationsAttribute) ctClass.getClassFile().getAttribute(AnnotationsAttribute.visibleTag);
-            if(annotationsAttribute != null) {
-                Annotation[] annotations = annotationsAttribute.getAnnotations();
-                for (Annotation annotation : annotations) {
-                    if (annotation.getTypeName().equals("javax.ejb.Stateless")) {
-                        entityClasses.add(ctClass);
-                    }
-                }
-            }
-        }
-        return entityClasses;
+        return flowContext;
     }
 
     // The purpose of preprocessing is to remove any methods that are abstract or have no body and also
@@ -125,7 +80,7 @@ public class BytecodeFlowStructureService {
 
     //http://www.javassist.org/tutorial/tutorial3.html
 
-    public List<String> preprocessBytecode(String bytecode){
+    private List<String> preprocessBytecode(String bytecode){
         // Setup some initial strctures
         List<String> storage = new ArrayList<>();
         String currentMethod = "";
@@ -196,17 +151,15 @@ public class BytecodeFlowStructureService {
     }
 
     // Processing the bytecode will create a tree of nodes that will show the flow of the nodes
-    public List< Map<Integer, FlowNode> > processBytecode(String bytecode){
-
-        List< Map<Integer, FlowNode> > roots = new ArrayList<>();
+    private Map<Integer, FlowNode> processBytecode(String bytecode){
 
         // Filter out garbage lines in the bytecode
         List<String> processed = self.preprocessBytecode(bytecode);
 
-        for(String s : processed) {
+        // Initialize the map for post-processing
+        Map<Integer, FlowNode> map = new HashMap<>();
 
-            // Initialize the map for post-processing
-            Map<Integer, FlowNode> map = new HashMap<>();
+        for(String s : processed) {
 
             // Split the method bytecode string based on newlines so each command is a different index
             String[] arr = s.split("\n");
@@ -291,20 +244,14 @@ public class BytecodeFlowStructureService {
                 }
 
             }
-
-            // If the tree exists then add it to the structure
-            if(root != null) {
-                // Before adding it, post-process the map
-                roots.add(self.postProcessBytecode(map));
-            }
         }
 
-        return roots;
+        return map;
     }
 
     // Post processing is optional but will remove any filler nodes so the only ones that remain are the initial
     // instruction and any logic nodes or method call nodes
-    public Map<Integer, FlowNode> postProcessBytecode(Map<Integer, FlowNode> map){
+    private Map<Integer, FlowNode> postProcessBytecode(Map<Integer, FlowNode> map){
 
         Set<Integer> importantNodes = new HashSet<>();
         importantNodes.add(0);
@@ -348,13 +295,9 @@ public class BytecodeFlowStructureService {
         }
 
         // Remove any nodes from the map that aren't needed anymore
-        Iterator<Integer> it = map.keySet().iterator();
         map.keySet().removeIf(e -> !sortedList.contains(e));
 
-        // Sort the map
-        Map<Integer, FlowNode> sortedMap = new TreeMap<>(map);
-
-        // Return the first node
-        return sortedMap;
+        // Return the sorted map
+        return new TreeMap<>(map);
     }
 }
