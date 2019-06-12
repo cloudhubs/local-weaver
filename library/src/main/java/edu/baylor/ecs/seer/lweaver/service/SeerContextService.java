@@ -60,7 +60,8 @@ public class SeerContextService {
     private List<SeerMsContext> generateMsContexts(List<String> resourcePaths, String organizationPath){
         List<SeerMsContext> msContexts = new ArrayList<>();
         allCtClasses = new ArrayList<>();
-        boolean isWindows = env.getProperty("platform.isWindows").equals("true");
+        boolean isWindows = System.getProperty("os.name")
+                .toLowerCase().startsWith("windows");
 
         for (String path: resourcePaths
         ) {

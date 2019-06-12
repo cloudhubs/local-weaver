@@ -110,7 +110,8 @@ public class ResourceService {
      * @return
      */
     private Resource getResource(String file){
-        boolean isWindows = env.getProperty("platform.isWindows").equals("true");
+        boolean isWindows = System.getProperty("os.name")
+                .toLowerCase().startsWith("windows");
         if(isWindows) {
             return resourceLoader.getResource("file:/" + file);
         } else {
