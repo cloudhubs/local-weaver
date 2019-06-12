@@ -91,8 +91,8 @@ public class SeerContextService {
                 msContext.setApi(seerApiContext);
                 msContext.setFlow(seerFlowContext);
 
-                msContexts.add(msContext);
             }
+            msContexts.add(msContext);
             //flows
 
 //            byteCode.process(ctClasses);
