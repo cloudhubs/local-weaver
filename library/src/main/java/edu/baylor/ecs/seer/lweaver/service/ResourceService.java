@@ -74,6 +74,32 @@ public class ResourceService {
         return fileNames;
     }
 
+    public Set<Properties> getProperties(String jarPath, String organizationPath) {
+        Resource resource = getResource(jarPath);
+        Set<Properties> properties = new HashSet<>();
+        String uriString = getUriStringFromResource(resource);
+        URI u = getUri(uriString);
+        Path path = Paths.get(u);
+
+        try (JarFile jar = new JarFile(path.toFile())) {
+            List<JarEntry> entries = Collections.list(jar.entries());
+            for (JarEntry je: entries) {
+                if (isPropertiesFile(je)){
+                    if (je.getName().contains("application")) {
+                        Properties prop = getPropertiesFileFromJar(jar, je);
+                        if (prop != null) {
+                            properties.add(prop);
+                        }
+                    }
+
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return properties;
+    }
+
     /**
      * Ct classes of particular file
      * @param file
@@ -192,6 +218,14 @@ public class ResourceService {
     }
 
     /**
+     * @param entry
+     * @return
+     */
+    private boolean isPropertiesFile(JarEntry entry) {
+        return entry.getName().endsWith(".properties") || entry.getName().endsWith(".yml");
+    }
+
+    /**
      * 2.4
      * @param jar
      * @param entry
@@ -207,6 +241,26 @@ public class ResourceService {
             e.printStackTrace();
         }
         return null;
+    }
+
+    /**
+     * 2.4
+     * @param jar
+     * @param entry
+     * @return
+     */
+    private Properties getPropertiesFileFromJar(JarFile jar, JarEntry entry) {
+        Properties prop = null;
+        try (InputStream in = jar.getInputStream(entry)) {
+            try (DataInputStream data = new DataInputStream(in)) {
+                prop = new Properties();
+                prop.load(data);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            prop = null;
+        }
+        return prop;
     }
 
 

@@ -3,14 +3,10 @@ package edu.baylor.ecs.seer.lweaver.service;
 import edu.baylor.ecs.seer.common.context.*;
 import edu.baylor.ecs.seer.common.entity.EntityModel;
 import javassist.CtClass;
-import javassist.bytecode.ClassFile;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 @Service
 public class SeerContextService {
@@ -71,6 +67,17 @@ public class SeerContextService {
             }
             List<CtClass> ctClasses = resourceService.getCtClasses(path, organizationPath);
             allCtClasses.addAll(ctClasses);
+
+            Set<Properties> properties = resourceService.getProperties(path, organizationPath);
+            if (properties.size() > 0){
+                Properties prop = properties.iterator().next();
+                String port = prop.getProperty("port");
+                if(port == null){
+                    port = prop.getProperty("server.port");
+                }
+                msContext.setPort(Integer.parseInt(port));
+            }
+
             //entities
             msContext.setEntity(entityService.getSeerEntityContext(ctClasses));
             for (EntityModel e: msContext.getEntity().getEntities()
