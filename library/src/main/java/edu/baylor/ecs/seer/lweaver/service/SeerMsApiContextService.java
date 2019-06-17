@@ -2,7 +2,7 @@ package edu.baylor.ecs.seer.lweaver.service;
 
 import edu.baylor.ecs.seer.common.api.SeerApiMethod;
 import edu.baylor.ecs.seer.common.api.SeerApiType;
-import edu.baylor.ecs.seer.common.context.SeerApiContext;
+import edu.baylor.ecs.seer.common.context.*;
 import edu.baylor.ecs.seer.common.entity.EntityModel;
 import javassist.CtClass;
 import javassist.CtMethod;
@@ -14,9 +14,56 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * The SeerMsApiContextService service constructs a
+ * {@link edu.baylor.ecs.seer.common.context.SeerApiContext} from an initial list of
+ * {@link javassist.CtClass}.
+ *
+ * @author  Jan Svacina
+ * @version 1.0
+ * @since   0.3.0
+ */
 @Service
 public class SeerMsApiContextService {
 
+    /**
+     * This method returns a {@link SeerApiContext} populated from a
+     * {@link List} of {@link CtClass} objects.
+     *
+     * @param ctClassesApiIn the {@link List} of {@link CtClass} objects to analyze
+     *
+     * @return a {@link SeerApiContext} populated from a {@link List} of {@link CtClass} objects
+     */
+    SeerApiContext createSeerApiContext(List<CtClass> ctClassesApiIn){
+
+        List<SeerApiMethod> apiMethods = new ArrayList<>();
+        List<CtClass> apiClasses = getApiClasses(ctClassesApiIn);
+        for (CtClass ctClass: apiClasses){
+            CtMethod[] ctMethods = ctClass.getMethods();
+            for (CtMethod ctMethod: ctMethods
+            ) {
+                SeerApiMethod seerApiMethod = createSeerApiMethod(ctClass, ctMethod);
+                if (seerApiMethod.getClassName().contains("edu.baylor.ecs.seer.usermanagement")){
+                    apiMethods.add(seerApiMethod);
+                }
+
+
+            }
+        }
+        SeerApiContext seerApiContext = new SeerApiContext();
+        seerApiContext.setSeerApiMethods(apiMethods);
+        return seerApiContext;
+    }
+
+    /**
+     * This method returns a {@link List} of {@link CtClass} objects who are annotated
+     * with the {@link javax.ws.rs.Path} annotation
+     *
+     * @param allClasses the {@link List} of {@link CtClass} objects to analyze
+     *
+     * @return a {@link List} of {@link CtClass} objects who are annotated with the
+     * {@link javax.ws.rs.Path} annotation
+     */
     private List<CtClass> getApiClasses(List<CtClass> allClasses){
         List<CtClass> entityClasses = new ArrayList<>();
         for (CtClass ctClass: allClasses
@@ -34,28 +81,17 @@ public class SeerMsApiContextService {
         return entityClasses;
     }
 
-    public SeerApiContext createSeerApiContext(List<CtClass> ctClassesApiIn){
-
-        List<SeerApiMethod> apiMethods = new ArrayList<>();
-        List<CtClass> apiClasses = getApiClasses(ctClassesApiIn);
-        for (CtClass ctClass: apiClasses){
-            CtMethod[] ctMethods = ctClass.getMethods();
-            for (CtMethod ctMethod: ctMethods
-                 ) {
-                SeerApiMethod seerApiMethod = createSeerApiMethod(ctClass, ctMethod);
-                if (seerApiMethod.getClassName().contains("edu.baylor.ecs.seer.usermanagement")){
-                    apiMethods.add(seerApiMethod);
-                }
-
-
-            }
-        }
-        SeerApiContext seerApiContext = new SeerApiContext();
-        seerApiContext.setSeerApiMethods(apiMethods);
-        return seerApiContext;
-    }
-
-    public SeerApiMethod createSeerApiMethod(CtClass ctClass, CtMethod ctMethod){
+    /**
+     * This method constructs a {@link SeerApiMethod} from an existing {@link CtClass} and a
+     * corresponding {@link CtMethod}
+     *
+     * @param ctClass the {@link CtClass} that holds the API method
+     * @param ctMethod the {@link CtMethod} that is API method
+     *
+     * @return a {@link SeerApiMethod} from an existing {@link CtClass} and a corresponding
+     * {@link CtMethod}
+     */
+    private SeerApiMethod createSeerApiMethod(CtClass ctClass, CtMethod ctMethod){
         SeerApiMethod seerApiMethod = new SeerApiMethod();
         seerApiMethod.setClassName(ctClass.getName());
         seerApiMethod.setMethodName(ctMethod.getLongName());
@@ -68,6 +104,14 @@ public class SeerMsApiContextService {
         return seerApiMethod;
     }
 
+    /**
+     * This method constructs an {@link EntityModel} representing the parameter type of the API
+     * call from the given {@link CtMethod}.
+     *
+     * @param ctMethod the {@link CtMethod} that is the API method
+     *
+     * @return an {@link EntityModel} representing the parameter type
+     */
     private EntityModel getParameterType(CtMethod ctMethod) {
         EntityModel entityModel = new EntityModel();
         entityModel.init();
@@ -84,6 +128,14 @@ public class SeerMsApiContextService {
         return entityModel;
     }
 
+    /**
+     * This method constructs an {@link EntityModel} representing the return type of the API
+     * call from the given {@link CtMethod}.
+     *
+     * @param ctMethod the {@link CtMethod} that is the API method
+     *
+     * @return an {@link EntityModel} representing the return type
+     */
     private EntityModel getReturnType(CtMethod ctMethod) {
         EntityModel entityModel = new EntityModel();
         entityModel.init();
@@ -97,7 +149,14 @@ public class SeerMsApiContextService {
         return entityModel;
     }
 
-
+    /**
+     * This method determines from an {@link CtMethod} if the API call is OUT or IN and
+     * returns the corresponding {@link SeerApiType}.
+     *
+     * @param ctMethod the {@link CtMethod} that is the API method
+     *
+     * @return the {@link SeerApiType} of the API call for the {@link CtMethod}
+     */
     private SeerApiType getSeerApiType(CtMethod ctMethod) {
         Object[] annotations = new Object[]{};
         SeerApiType seerApiType = SeerApiType.IN;
@@ -120,6 +179,5 @@ public class SeerMsApiContextService {
 //        }
         return seerApiType;
     }
-
 
 }

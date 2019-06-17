@@ -8,6 +8,16 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.context.annotation.Configuration;
 
+/**
+ * This class is the {@link org.aspectj.lang.annotation.Aspect} for exception handling
+ * of the local-weaver
+ *
+ * @deprecated
+ *
+ * @author  JR Diehl
+ * @version 1.0
+ * @since   0.3.0
+ */
 @Aspect
 @Configuration
 @Configurable

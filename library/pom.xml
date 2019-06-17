@@ -76,7 +76,7 @@
         <dependency>
             <groupId>edu.baylor.ecs.seer</groupId>
             <artifactId>seer-common</artifactId>
-            <version>0.1.0-RELEASE</version>
+            <version>0.3.0</version>
         </dependency>
 
         <dependency>

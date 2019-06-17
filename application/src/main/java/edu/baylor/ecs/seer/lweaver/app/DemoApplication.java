@@ -1,25 +1,29 @@
 package edu.baylor.ecs.seer.lweaver.app;
 
-import edu.baylor.ecs.seer.common.context.SeerContext;
-import edu.baylor.ecs.seer.lweaver.service.SeerContextService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * This class is the {@link SpringBootApplication} runner for the demo application
+ * for the local-weaver
+ *
+ * @author  Jan Svacina
+ * @version 1.0
+ * @since   0.3.0
+ */
 @SpringBootApplication(scanBasePackages = "edu.baylor.ecs.seer")
-
 public class DemoApplication {
 
-
-
-
+    /**
+     * Empty constructor for {@link DemoApplication}
+     */
     public DemoApplication(){
+        // Empty constructor
     }
 
+    /**
+     * This main method runs the {@link DemoApplication} {@link SpringBootApplication}
+     */
     public static void main(String[] args) {
         SpringApplication.run(DemoApplication.class, args);
     }

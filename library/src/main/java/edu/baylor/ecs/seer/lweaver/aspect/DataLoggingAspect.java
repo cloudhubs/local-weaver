@@ -14,6 +14,15 @@ import org.springframework.context.annotation.Configuration;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * This class is the {@link org.aspectj.lang.annotation.Aspect} for logging of the local-weaver
+ *
+ * @deprecated
+ *
+ * @author  Andrew Walker
+ * @version 1.0
+ * @since   0.3.0
+ */
 @Aspect
 @Configuration
 @Configurable
@@ -44,7 +53,7 @@ public class DataLoggingAspect {
 //        logger.info(name + " [Finished processing module.]");
 //        return o;
 //    }
-//
+
 //    @Around(value="edu.baylor.ecs.seer.lweaver.aspect.CommonJoinPointConfig.bytecodeServicePreprocessBytecode()")
 //    public Object bytecodeServicePreprocessBytecode(ProceedingJoinPoint joinPoint) throws Throwable {
 //        String name = joinPoint.getSignature().getName();
@@ -62,7 +71,7 @@ public class DataLoggingAspect {
 //        logger.info(name + " [Finished preprocessing bytecode.]");
 //        return o;
 //    }
-//
+
 //    @Around(value="edu.baylor.ecs.seer.lweaver.aspect.CommonJoinPointConfig.bytecodeServiceProcessBytecode()")
 //    public Object bytecodeServiceProcessBytecode(ProceedingJoinPoint joinPoint) throws Throwable {
 //        String name = joinPoint.getSignature().getName();
@@ -78,7 +87,7 @@ public class DataLoggingAspect {
 //        logger.info(name + " [Finished processing methods into node graphs.]");
 //        return o;
 //    }
-//
+
 //    @Around(value="edu.baylor.ecs.seer.lweaver.aspect.CommonJoinPointConfig.bytecodeServicePostProcessBytecode()")
 //    public Object bytecodeServicePostProcessBytecode(ProceedingJoinPoint joinPoint) throws Throwable {
 //        String name = joinPoint.getSignature().getName();
@@ -90,7 +99,7 @@ public class DataLoggingAspect {
 //        numProcessed++;
 //        return o;
 //    }
-//
+
 //    @Around(value="edu.baylor.ecs.seer.lweaver.aspect.CommonJoinPointConfig.bytecodeServiceFilter()")
 //    public Object bytecodeServiceFilter(ProceedingJoinPoint joinPoint) throws Throwable {
 //        String name = "";
@@ -103,7 +112,7 @@ public class DataLoggingAspect {
 //                name = "Undetermined";
 //            }
 //        }
-//
+
 //        resetLogger(joinPoint);
 //        logger.info("[Filtering class " + name + " ... ]");
 //        Object o = joinPoint.proceed();
@@ -119,21 +128,19 @@ public class DataLoggingAspect {
 //        return o;
 //    }
 
-
-    /*@Around(value="edu.baylor.ecs.seer.lweaver.aspect.CommonJoinPointConfig.bytecodeServiceCall()")
-    public Object bytecodeServicePostProcessBytecode(ProceedingJoinPoint joinPoint) throws Throwable {
-        String name = joinPoint.getSignature().getName();
-        resetLogger(joinPoint);
-        logger.info("[Call for " + name + " ... ]");
-        Object o = joinPoint.proceed();
-        resetLogger(joinPoint);
-        logger.info("[Finished " + name + ".]");
-        return o;
-    }*/
-
-    private void resetLogger(JoinPoint point){
-        logger = LoggerFactory.getLogger(point.getSignature().getDeclaringType());
-    }
-
+//    @Around(value="edu.baylor.ecs.seer.lweaver.aspect.CommonJoinPointConfig.bytecodeServiceCall()")
+//    public Object bytecodeServicePostProcessBytecode(ProceedingJoinPoint joinPoint) throws Throwable {
+//        String name = joinPoint.getSignature().getName();
+//        resetLogger(joinPoint);
+//        logger.info("[Call for " + name + " ... ]");
+//        Object o = joinPoint.proceed();
+//        resetLogger(joinPoint);
+//        logger.info("[Finished " + name + ".]");
+//        return o;
+//    }
+//
+//    private void resetLogger(JoinPoint point){
+//        logger = LoggerFactory.getLogger(point.getSignature().getDeclaringType());
+//    }
 
 }

@@ -3,43 +3,94 @@ package edu.baylor.ecs.seer.lweaver.service;
 import edu.baylor.ecs.seer.common.context.*;
 import edu.baylor.ecs.seer.common.entity.EntityModel;
 import javassist.CtClass;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
 
+/**
+ * The SeerContextService service populates a {@link SeerContext}. The entry point for this
+ * class is the {@link SeerContextService#populateSeerContext(SeerContext)}.
+ *
+ * </p>
+ *
+ * This service depends on {@link ResourceService}, {@link SeerMsSecurityContextService}, {@link SeerMsEntityContextService},
+ * {@link FlowStructureService}, {@link BytecodeFlowStructureService}, {@link SeerMsApiContextService} services
+ * to construct the various aspects of the {@link SeerContext}.
+ *
+ * @author  Jan Svacina
+ * @version 1.3
+ * @since   0.3.0
+ */
 @Service
 public class SeerContextService {
 
-    @Autowired
-    private ResourceService resourceService;
+    // Service for managing the resources in the project
+    private final ResourceService resourceService;
 
-    @Autowired
-    private SeerMsSecurityContextService securityService;
+    // Service for managing the security aspect of the microservices
+    private final SeerMsSecurityContextService securityService;
 
-    @Autowired
-    private SeerMsEntityContextService entityService;
+    // Service for managing the entity aspect of the microservices
+    private final SeerMsEntityContextService entityService;
 
-    @Autowired
-    private FlowStructureService flowService;
+    // Service for managing the flow aspect of the microservices
+    private final FlowStructureService flowService;
 
-    @Autowired
-    private BytecodeFlowStructureService bytecodeService;
+    // Service for managing the bytecode flow aspect of the microservices
+    private final BytecodeFlowStructureService bytecodeService;
 
-    @Autowired
-    private SeerMsApiContextService apiSerivce;
+    // Service for managing the api aspect of the microservices
+    private final SeerMsApiContextService apiSerivce;
 
+    // List of CtClasses for constructing the SeerSecurityContext
     private List<CtClass> allCtClasses;
 
+    /**
+     * Constructor for {@link SeerContextService} which injects the needed services
+     *
+     * @param resourceService service for managing the resources in the project
+     * @param securityService service for managing the security aspect of the microservices
+     * @param entityService service for managing the entity aspect of the microservices
+     * @param flowService service for managing the flow aspect of the microservices
+     * @param bytecodeService service for managing the bytecode flow aspect of the microservices
+     * @param apiSerivce service for managing the api aspect of the microservices
+     */
+    public SeerContextService(ResourceService resourceService, SeerMsSecurityContextService securityService, SeerMsEntityContextService entityService, FlowStructureService flowService, BytecodeFlowStructureService bytecodeService, SeerMsApiContextService apiSerivce) {
+        this.resourceService = resourceService;
+        this.securityService = securityService;
+        this.entityService = entityService;
+        this.flowService = flowService;
+        this.bytecodeService = bytecodeService;
+        this.apiSerivce = apiSerivce;
+    }
+
+    /**
+     * This method returns a {@link SeerContext} populated with {@link SeerMsContext} objects
+     * for each of the microservices in the project. This method is the entry point for
+     * {@link SeerContextService}.
+     *
+     * @param seerContext the {@link SeerContext} holding the {@link SeerRequestContext}
+     *
+     * @return a {@link SeerContext} populated with {@link SeerMsContext} objects
+     */
     public SeerContext populateSeerContext(SeerContext seerContext){
         SeerRequestContext req = seerContext.getRequest();
         List<String> resourcePaths = getResourcePaths(req);
         List<SeerMsContext> msContexts = generateMsContexts(resourcePaths, req.getOrganizationPath());
         seerContext.setMsContexts(msContexts);
-        //seerContext.setSecurity(generateSecurityContext(req));
         return seerContext;
     }
 
+    /**
+     * This method returns a {@link List} of {@link String} objects, each of which is a JAR
+     * file for a microservice. This is a private helper method called by
+     * {@link SeerContextService#populateSeerContext(SeerContext)}
+     *
+     * @param req the {@link SeerRequestContext} containing the path to the project to analyze
+     *
+     * @return a {@link List} of {@link String} objects, each of which is a JAR file for
+     * a microservice
+     */
     private List<String> getResourcePaths(SeerRequestContext req){
         List<String> resourcePaths = null;
         if (req.isUseRemote()){
@@ -50,6 +101,17 @@ public class SeerContextService {
         return resourcePaths;
     }
 
+    /**
+     * This method returns a {@link List} of {@link SeerMsContext} objects. Each {@link SeerMsContext}
+     * holds the representation of a microservice in the project. This is a private helper method
+     * called by {@link SeerContextService#populateSeerContext(SeerContext)}.
+     *
+     * @param resourcePaths a {@link List} of paths to the compiled JAR files
+     * @param organizationPath the oganization package
+     *
+     * @return a {@link List} of {@link SeerMsContext} objects representing the microservices
+     * from the project
+     */
     private List<SeerMsContext> generateMsContexts(List<String> resourcePaths, String organizationPath){
         List<SeerMsContext> msContexts = new ArrayList<>();
         allCtClasses = new ArrayList<>();
@@ -78,15 +140,11 @@ public class SeerContextService {
                 msContext.setPort(Integer.parseInt(port));
             }
 
-            //entities
             msContext.setEntity(entityService.getSeerEntityContext(ctClasses));
-            for (EntityModel e: msContext.getEntity().getEntities()
-            ) {
+            for (EntityModel e: msContext.getEntity().getEntities()) {
                 e.setModuleName(msContext.getModuleName());
             }
-            //API
 
-            //getting rid of wars from java libraries
             if (msContext.getEntity().getEntities().size() > 0){
 
                 SeerFlowContext seerFlowContext = flowService.process(ctClasses);
@@ -97,31 +155,23 @@ public class SeerContextService {
                 msContext.setApi(seerApiContext);
 
             }
+
             msContexts.add(msContext);
-            //flows
-
-//            byteCode.process(ctClasses);
-            //API
-
 
         }
         return msContexts;
     }
 
-
+    /**
+     * This method returns a {@link SeerSecurityContext} from a given {@link SeerRequestContext}.
+     * A {@link List} of all {@link CtClass} objects from the entire system is required. This list
+     * is created during {@link SeerContextService#generateMsContexts(List, String)} .
+     *
+     * @param req the {@link SeerRequestContext} containing the path to the project to analyze
+     *
+     * @return a {@link SeerSecurityContext} from a given {@link SeerRequestContext}
+     */
     private SeerSecurityContext generateSecurityContext(SeerRequestContext req){
         return securityService.getMsSeerSecurityContext(this.allCtClasses, req);
     }
-
-    //set module characteristics
-
-    //set module lines of code
-
-    //set module entities counter
-
-    //set module entities context
-
-    //set global context
-
-
 }

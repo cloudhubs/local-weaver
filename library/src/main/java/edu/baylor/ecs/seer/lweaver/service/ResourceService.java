@@ -1,13 +1,7 @@
 package edu.baylor.ecs.seer.lweaver.service;
 
-import edu.baylor.ecs.seer.common.context.SeerContext;
-import edu.baylor.ecs.seer.common.context.SeerMsContext;
-import edu.baylor.ecs.seer.common.context.SeerRequestContext;
-
 import javassist.ClassPool;
 import javassist.CtClass;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.env.Environment;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Service;
 import org.springframework.core.io.Resource;
@@ -29,21 +23,42 @@ import java.util.stream.Stream;
 
 import javassist.bytecode.*;
 
+/**
+ * The ResourceService service exposes many helper methods for managing loading resources
+ * from the files contained within a jar. The service exposes three methods for public use,
+ * {@link ResourceService#getResourcePaths(String)}, {@link ResourceService#getProperties(String, String)} and
+ * {@link ResourceService#getCtClasses(String, String)}.
+ *
+ * @author  Jan Svacina
+ * @version 1.1
+ * @since   0.3.0
+ */
 @Service
 public class ResourceService {
 
-    @Autowired
-    private ResourceLoader resourceLoader;
-
-    @Autowired
-    private Environment env;
+    // Loader in charge of loading JAR files and ClassFiles
+    private final ResourceLoader resourceLoader;
 
     /**
-     * Paths to all compiled jar packages
-     * @param folderPath
-     * @return
+     * Constructor for {@link ResourceService} which injects a {@link ResourceLoader}
+     *
+     * @param resourceLoader a loader for managing resources in the project
      */
-    public List<String> getResourcePaths(String folderPath){
+    public ResourceService(ResourceLoader resourceLoader){
+        this.resourceLoader = resourceLoader;
+    }
+
+    /**
+     * This method returns a {@link List} of {@link String} objects, each of which represents
+     * a JAR or WAR file in the prject directory to be analyzed. This method is an entry point
+     * for the {@link ResourceService}.
+     *
+     * @param folderPath the root folder of the project which contains the microservices
+     *
+     * @return a {@link List} of {@link String} objects, each of which represents a JAR or WAR
+     * file in the prject directory to be analyzed
+     */
+    List<String> getResourcePaths(String folderPath){
         String directory = new File(folderPath).getAbsolutePath();
         Path start = Paths.get(directory);
         int maxDepth = 15;
@@ -74,7 +89,18 @@ public class ResourceService {
         return fileNames;
     }
 
-    public Set<Properties> getProperties(String jarPath, String organizationPath) {
+    /**
+     * This method returns a {@link Set} of {@link Properties} objects loaded from the properties
+     * files from the microservice. This method is an entry point for the {@link ResourceService}.
+     *
+     * @param jarPath the path to the JAR file
+     * @param organizationPath the package of the project to ensure we only get project config
+     *                         files
+     *
+     * @return a {@link Set} of {@link Properties} objects loaded from the properties files
+     * from the microservice
+     */
+    Set<Properties> getProperties(String jarPath, String organizationPath) {
         Resource resource = getResource(jarPath);
         Set<Properties> properties = new HashSet<>();
         String uriString = getUriStringFromResource(resource);
@@ -101,11 +127,15 @@ public class ResourceService {
     }
 
     /**
-     * Ct classes of particular file
-     * @param file
-     * @return
+     * This method returns a {@link List} of {@link CtClass} objects loaded from a particular
+     * JAR file. This method is an entry point for the {@link ResourceService}.
+     *
+     * @param file the path to the JAR file
+     * @param organizationPath the package of the project to ensure we only get project classes
+     *
+     * @return a {@link List} of {@link CtClass} objects loaded from a particular JAR file
      */
-    public List<CtClass> getCtClasses(String file, String organizationPath){
+    List<CtClass> getCtClasses(String file, String organizationPath){
         ClassPool cp = ClassPool.getDefault();
         List<CtClass> ctClasses = new ArrayList<>();
         // 1. Get resource
@@ -131,9 +161,13 @@ public class ResourceService {
     }
 
     /**
-     * 1. Get Resource
-     * @param file
-     * @return
+     * This method returns a {@link Resource} from a file path loaded by the injected
+     * {@link ResourceLoader}. This is a private helper method used by
+     * {@link ResourceService#getProperties(String, String)} and by {@link ResourceService#getCtClasses(String, String)}.
+     *
+     * @param file the path to the file
+     *
+     * @return a {@link Resource} from a file path
      */
     private Resource getResource(String file){
         boolean isWindows = System.getProperty("os.name")
@@ -146,11 +180,21 @@ public class ResourceService {
     }
 
     /**
-     * 2. Get Class File Set
-     * @param resource
-     * @return
+     * This method constructs a {@link Set} of {@link ClassFile} objects from the
+     * loaded JAR file. This is a private helper method used by
+     * {@link ResourceService#getCtClasses(String, String)}.
+     *
+     * @param resource the {@link Resource} representing a JAR file
+     * @param organizationPath the package of the project to ensure we only get project classes
+     *
+     * @return a {@link Set} of {@link ClassFile} objects from the loaded JAR file
      */
     private Set<ClassFile> getClassFileSet(Resource resource, String organizationPath){
+
+        /*
+         * ToDo: Check organization path on modules layer
+         */
+
         Set<ClassFile> classFiles = new HashSet<>();
         // 2.1
         String uriString = getUriStringFromResource(resource);
@@ -163,7 +207,6 @@ public class ResourceService {
             ) {
                 //2.3
                 if (isClassFile(je)){
-                    //ToDo: Check organization path on modules layer
                     if (je.getName().contains(organizationPath)) {
                         //2.4
                         ClassFile classFile = getClassFileFromJar(jar, je);
@@ -181,9 +224,13 @@ public class ResourceService {
     }
 
     /**
-     * 2.1.
-     * @param resource
-     * @return
+     * This method constructs a URI {@link String} from a given {@link Resource}. This is a private
+     * helper method used by {@link ResourceService#getProperties(String, String)} and by
+     * {@link ResourceService#getClassFileSet(Resource, String)}.
+     *
+     * @param resource the {@link Resource} to extract the URI from
+     *
+     * @return a URI {@link String} from a given {@link Resource}
      */
     private String getUriStringFromResource(Resource resource){
         try {
@@ -195,9 +242,13 @@ public class ResourceService {
     }
 
     /**
-     * 2.2
-     * @param uri
-     * @return
+     * This method constructs a {@link URI} from a given {@link String}. This is a private
+     * helper method used by {@link ResourceService#getProperties(String, String)} and by
+     * {@link ResourceService#getClassFileSet(Resource, String)}.
+     *
+     * @param uri the {@link String} to create the URI from
+     *
+     * @return a {@link URI} from a given {@link String}
      */
     private URI getUri(String uri){
         try {
@@ -209,30 +260,41 @@ public class ResourceService {
     }
 
     /**
-     * 2.3
-     * @param entry
-     * @return
+     * This method returns if a {@link JarEntry} is a class file. This is a private
+     * helper method used by {@link ResourceService#getClassFileSet(Resource, String)}.
+     *
+     * @param entry the {@link JarEntry} to test
+     *
+     * @return if a {@link JarEntry} is a class file
      */
     private boolean isClassFile(JarEntry entry) {
         return entry.getName().endsWith(".class");
     }
 
     /**
-     * @param entry
-     * @return
+     * This method returns if a {@link JarEntry} is a properties file. This is a private
+     * helper method used by {@link ResourceService#getClassFileSet(Resource, String)}.
+     *
+     * @param entry the {@link JarEntry} to test
+     *
+     * @return if a {@link JarEntry} is a properties file
      */
     private boolean isPropertiesFile(JarEntry entry) {
         return entry.getName().endsWith(".properties") || entry.getName().endsWith(".yml");
     }
 
     /**
-     * 2.4
-     * @param jar
-     * @param entry
-     * @return
-     * ToDo: Do not process jars for libraries, just code!
+     * This method returns a {@link ClassFile} from a given {@link JarFile} and a {@link JarEntry}.
+     *
+     * @param jar the {@link JarFile} to get the {@link InputStream} from
+     * @param entry the {@link JarEntry} to extract
+     *
+     * @return a {@link ClassFile} from a given {@link JarFile} and a {@link JarEntry}
      */
     private ClassFile getClassFileFromJar(JarFile jar, JarEntry entry) {
+        /*
+         * ToDo: Do not process jars for libraries, just code!
+         */
         try (InputStream in = jar.getInputStream(entry)) {
             try (DataInputStream data = new DataInputStream(in)) {
                 return new ClassFile(data);
@@ -244,10 +306,12 @@ public class ResourceService {
     }
 
     /**
-     * 2.4
-     * @param jar
-     * @param entry
-     * @return
+     * This method returns a {@link Properties} from a given {@link JarFile} and a {@link JarEntry}.
+     *
+     * @param jar the {@link JarFile} to get the {@link InputStream} from
+     * @param entry the {@link JarEntry} to extract
+     *
+     * @return a {@link Properties} from a given {@link JarFile} and a {@link JarEntry}
      */
     private Properties getPropertiesFileFromJar(JarFile jar, JarEntry entry) {
         Properties prop = null;
@@ -262,6 +326,5 @@ public class ResourceService {
         }
         return prop;
     }
-
 
 }
