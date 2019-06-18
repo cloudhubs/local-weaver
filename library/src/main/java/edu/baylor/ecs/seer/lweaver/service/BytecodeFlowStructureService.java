@@ -282,6 +282,15 @@ public class BytecodeFlowStructureService {
                     FlowNode n = map.get(next);
                     entry.getValue().addChild(n);
                 }
+                // If the node is a return
+                //      remove existing children
+                else if (entry.getValue().getType().equals("return")){
+                    Iterator<Integer> it = entry.getValue().getChildren().iterator();
+                    while (it.hasNext()) {
+                        it.next();
+                        it.remove();
+                    }
+                }
 
             }
         }
