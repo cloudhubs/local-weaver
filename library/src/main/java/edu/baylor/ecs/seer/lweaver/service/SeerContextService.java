@@ -78,6 +78,8 @@ public class SeerContextService {
         List<String> resourcePaths = getResourcePaths(req);
         List<SeerMsContext> msContexts = generateMsContexts(resourcePaths, req.getOrganizationPath());
         seerContext.setMsContexts(msContexts);
+        SeerSecurityContext seerSecurityContext = generateSecurityContext(seerContext.getRequest());
+        seerContext.setSecurity(seerSecurityContext);
         return seerContext;
     }
 
@@ -155,7 +157,6 @@ public class SeerContextService {
                 msContext.setApi(seerApiContext);
 
             }
-
             msContexts.add(msContext);
 
         }

@@ -37,8 +37,8 @@ public class Controller {
     }
 
     /**
-     * Returns a {@link edu.baylor.ecs.seer.common.context.SeerContext} that represents all
-     * microservices found by the {@link SeerContextService}
+     * This method returns a {@link edu.baylor.ecs.seer.common.context.SeerContext} that
+     * represents all microservices found by the {@link SeerContextService}
      *
      * @param  sampleObject  a wrapper class for the {@link edu.baylor.ecs.seer.common.context.SeerRequestContext}
      *                       which contains the configuration information for analyzing the

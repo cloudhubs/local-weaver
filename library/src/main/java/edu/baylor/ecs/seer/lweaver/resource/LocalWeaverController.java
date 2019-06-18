@@ -38,12 +38,12 @@ public class LocalWeaverController {
     }
 
     /**
-     * Returns a {@link edu.baylor.ecs.seer.common.context.SeerContext} that represents all
+     * This method returns a {@link edu.baylor.ecs.seer.common.context.SeerContext} that represents all
      * microservices found by the {@link SeerContextService}
      *
      * @param  context  a {@link SeerContext} object to be populated by the {@link SeerContextService}
      *
-     * @return the {@link SeerContext} {@link SeerContext} representing all the microservices
+     * @return the {@link SeerContext} representing all the microservices
      */
     @PostMapping
     @RequestMapping(value = "/")

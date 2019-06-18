@@ -48,9 +48,9 @@ import java.util.*;
 public class SeerMsEntityContextService {
 
     /**
-     * Returns a {@link edu.baylor.ecs.seer.common.context.SeerEntityContext} that represents the
-     * entities for the particular microservice. This is the entry method for
-     * {@link edu.baylor.ecs.seer.lweaver.service.SeerMsEntityContextService}
+     * This method returns a {@link edu.baylor.ecs.seer.common.context.SeerEntityContext}
+     * that represents the entities for the particular microservice. This is the entry method
+     * for {@link edu.baylor.ecs.seer.lweaver.service.SeerMsEntityContextService}
      *
      * @param  allClasses  a {@link java.util.List} of {@link javassist.CtClass} object
      * that represents all the possible classes in the microservice
@@ -69,9 +69,9 @@ public class SeerMsEntityContextService {
     }
 
     /**
-     * Returns a {@link java.util.List} of {@link javassist.CtClass} objects that have the
-     * {@link javax.persistence.Entity} annotation. This is a private helper method called from
-     * {@link SeerMsEntityContextService#getSeerEntityContext(List)}
+     * This method returns a {@link java.util.List} of {@link javassist.CtClass} objects that
+     * have the {@link javax.persistence.Entity} annotation. This is a private helper method
+     * called from {@link SeerMsEntityContextService#getSeerEntityContext(List)}
      *
      * @param  allClasses  a {@link java.util.List} of {@link javassist.CtClass} object
      * that represents all the possible classes in the microservice
