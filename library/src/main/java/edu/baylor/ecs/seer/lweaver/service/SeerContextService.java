@@ -76,7 +76,7 @@ public class SeerContextService {
     public SeerContext populateSeerContext(SeerContext seerContext){
         SeerRequestContext req = seerContext.getRequest();
         List<String> resourcePaths = getResourcePaths(req);
-        List<SeerMsContext> msContexts = generateMsContexts(resourcePaths, req.getOrganizationPath());
+        List<SeerMsContext> msContexts = generateMsContexts(resourcePaths, req);
         seerContext.setMsContexts(msContexts);
         SeerSecurityContext seerSecurityContext = generateSecurityContext(seerContext.getRequest());
         seerContext.setSecurity(seerSecurityContext);
@@ -109,12 +109,13 @@ public class SeerContextService {
      * called by {@link SeerContextService#populateSeerContext(SeerContext)}.
      *
      * @param resourcePaths a {@link List} of paths to the compiled JAR files
-     * @param organizationPath the oganization package
+     * @param request the {@link SeerRequestContext} with necessary metadata
      *
      * @return a {@link List} of {@link SeerMsContext} objects representing the microservices
      * from the project
      */
-    private List<SeerMsContext> generateMsContexts(List<String> resourcePaths, String organizationPath){
+    private List<SeerMsContext> generateMsContexts(List<String> resourcePaths, SeerRequestContext request){
+        String organizationPath = request.getOrganizationPath();
         List<SeerMsContext> msContexts = new ArrayList<>();
         allCtClasses = new ArrayList<>();
         boolean isWindows = System.getProperty("os.name")
@@ -155,8 +156,11 @@ public class SeerContextService {
 
                 SeerApiContext seerApiContext = apiSerivce.createSeerApiContext(ctClasses);
                 msContext.setApi(seerApiContext);
-
             }
+
+            SeerSecurityContext seerSecurityContext = securityService.getMsSeerSecurityContext(ctClasses, request);
+            msContext.setSecurity(seerSecurityContext);
+
             msContexts.add(msContext);
 
         }
@@ -166,7 +170,7 @@ public class SeerContextService {
     /**
      * This method returns a {@link SeerSecurityContext} from a given {@link SeerRequestContext}.
      * A {@link List} of all {@link CtClass} objects from the entire system is required. This list
-     * is created during {@link SeerContextService#generateMsContexts(List, String)} .
+     * is created during {@link SeerContextService#generateMsContexts(List, SeerRequestContext)} .
      *
      * @param req the {@link SeerRequestContext} containing the path to the project to analyze
      *
