@@ -1,8 +1,6 @@
 package edu.baylor.ecs.seer.lweaver.service;
 
 import edu.baylor.ecs.seer.common.security.HttpType;
-import edu.baylor.ecs.seer.common.security.SecurityMethod;
-import edu.baylor.ecs.seer.common.security.SecurityRole;
 import edu.baylor.ecs.seer.common.security.SecurityRootMethod;
 import javassist.CannotCompileException;
 import javassist.CtClass;
@@ -18,6 +16,7 @@ import javassist.expr.MethodCall;
 import org.springframework.util.StringUtils;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class SecurityFilterGeneralAnnotationStrategy implements SecurityFilterStrategy {
 
@@ -76,9 +75,14 @@ public class SecurityFilterGeneralAnnotationStrategy implements SecurityFilterSt
                 }
 
                 if(params.length > 0) {
-                    rootMethod.setParameterType(params[0].getName());
-                } else {
-                    rootMethod.setParameterType(null);
+                    List<CtClass> streamable = Arrays.asList(params);
+
+                    List<String> params_s = streamable
+                                                .stream()
+                                                .map(CtClass::getName)
+                                                .collect(Collectors.toList());
+
+                    rootMethod.setParameters(params_s);
                 }
 
                 if (attr != null) {
@@ -95,7 +99,7 @@ public class SecurityFilterGeneralAnnotationStrategy implements SecurityFilterSt
                                     MemberValue[] memberValues = amv.getValue();
                                     for (MemberValue mv : memberValues) {
                                         String val = mv.toString().replace("\"", "");
-                                        rootMethod.getMethodRoles().add(new SecurityRole(val));
+                                        rootMethod.getRoles().add(val);
                                     }
                                 }
                             }
@@ -124,7 +128,7 @@ public class SecurityFilterGeneralAnnotationStrategy implements SecurityFilterSt
                                                         .filter(x -> x.getMethodName()
                                                                 .equals(ctMethod.getLongName()))
                                                         .findFirst()
-                                                        .ifPresent(mthd -> mthd.getChildMethods().add(new SecurityMethod(sig)));
+                                                        .ifPresent(mthd -> mthd.getChildMethods().add(sig));
                                             }
                                         }
                                     }
@@ -148,7 +152,7 @@ public class SecurityFilterGeneralAnnotationStrategy implements SecurityFilterSt
                         }
                     }
                 } else {
-                    rootMethod.getMethodRoles().add(new SecurityRole("SEER_ALL_ACCESS_ALLOWED"));
+                    rootMethod.getRoles().add("SEER_ALL_ACCESS_ALLOWED");
                     rootMethod.setHttpType(HttpType.NONE);
                 }
             }
@@ -181,7 +185,7 @@ public class SecurityFilterGeneralAnnotationStrategy implements SecurityFilterSt
             } else {
                 int lastNdx = pckge.lastIndexOf(";");
                 pckge = pckge.substring(0, lastNdx);
-                pckge = pckge.replaceAll(";", ",");
+                pckge = pckge.replaceAll(";", ", ");
             }
         }
 

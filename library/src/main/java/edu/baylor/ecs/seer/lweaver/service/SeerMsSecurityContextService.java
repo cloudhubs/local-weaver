@@ -9,7 +9,6 @@ import edu.baylor.ecs.seer.common.security.*;
 import javassist.CtClass;
 import org.springframework.stereotype.Service;
 
-import java.security.Security;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -64,7 +63,7 @@ public class SeerMsSecurityContextService {
 
         List<SecurityMethod> violatingMethods = allSecurityMethods
                                             .stream()
-                                            .filter(x -> x.getMethodRoles().size() > 1)
+                                            .filter(x -> x.getRoles().size() > 1)
                                             .collect(Collectors.toList());
 
         Set<SeerSecurityConstraintViolation> violations = findViolations(securityContext, violatingMethods);
@@ -114,24 +113,24 @@ public class SeerMsSecurityContextService {
 
     private void reduceMethodRoles(SeerSecurityContext context){
         for(SecurityRootMethod method : context.getSecurityRoots()){
-            if(method.getMethodRoles().size() > 0){
-                List<SecurityRole> roles = new ArrayList<>(method.getMethodRoles());
+            if(method.getRoles().size() > 0){
+                List<String> roles = new ArrayList<>(method.getRoles());
 
-                int maxDepth = context.getRoot().depth(roles.get(0).getFormattedRoleName());
-                SecurityRole minPermission = roles.get(0);
+                int maxDepth = context.getRoot().depth(getFormattedRoleName(roles.get(0)));
+                String minPermission = roles.get(0);
 
                 for(int i = 1; i < roles.size(); i++){
-                    int depth = context.getRoot().depth(roles.get(i).getFormattedRoleName());
+                    int depth = context.getRoot().depth(getFormattedRoleName(roles.get(i)));
                     if(depth > maxDepth){
                         minPermission = roles.get(i);
                         maxDepth = depth;
                     }
                 }
 
-                Set<SecurityRole> reducedRoles = new HashSet<>();
+                Set<String> reducedRoles = new HashSet<>();
                 reducedRoles.add(minPermission);
 
-                method.setMethodRoles(reducedRoles);
+                method.setRoles(reducedRoles);
 
             }
         }
@@ -140,23 +139,25 @@ public class SeerMsSecurityContextService {
     private Map<String, SecurityMethod> buildMap(SeerSecurityContext context){
 
         Map<String, SecurityMethod> allSecurityMethods = new HashMap<>();
-        Queue<SecurityMethod> queue = new LinkedList<>();
+        Queue<String> queue = new LinkedList<>();
 
         for(SecurityRootMethod method : context.getSecurityRoots()){
-            SecurityMethod securityMethod = new SecurityMethod(method.getMethodName(), method.getChildMethods(), method.getMethodRoles());
+            SecurityMethod securityMethod = new SecurityMethod(method.getMethodName(), method.getChildMethods(), method.getRoles());
             allSecurityMethods.put(method.getMethodName(), securityMethod);
-            queue.add(securityMethod);
+            queue.add(method.getMethodName());
         }
 
         do{
-            SecurityMethod method = queue.remove();
-            for(SecurityMethod m : method.getChildMethods()){
-                SecurityMethod child = allSecurityMethods.getOrDefault(m.getMethodName(), new SecurityMethod(m.getMethodName()));
-                child.getMethodRoles().addAll(method.getMethodRoles());
+            String method = queue.remove();
+            SecurityMethod parent = allSecurityMethods.getOrDefault(method, new SecurityMethod(method));
+
+            for(String m : parent.getChildMethods()){
+                SecurityMethod child = allSecurityMethods.getOrDefault(m, new SecurityMethod(m));
+                child.getRoles().addAll(parent.getRoles());
                 allSecurityMethods.put(child.getMethodName(), child);
             }
 
-            queue.addAll(method.getChildMethods());
+            queue.addAll(parent.getChildMethods());
 
         } while(!queue.isEmpty());
 
@@ -168,36 +169,45 @@ public class SeerMsSecurityContextService {
         Set<SeerSecurityConstraintViolation> violations = new HashSet<>();
 
         for(SecurityMethod violatingMethod : violatingMethods){
-            List<SecurityRole> roles = new ArrayList<>(violatingMethod.getMethodRoles());
-            SecurityRole r1 = roles.get(0);
-            SecurityRole r2 = roles.get(1);
+            List<String> roles = new ArrayList<>(violatingMethod.getRoles());
+            String r1 = roles.get(0);
+            String r2 = roles.get(1);
 
-            int depth1 = context.getRoot().depth(r1.getFormattedRoleName());
-            int depth2 = context.getRoot().depth(r2.getFormattedRoleName());
+            int depth1 = context.getRoot().depth(getFormattedRoleName(r1));
+            int depth2 = context.getRoot().depth(getFormattedRoleName(r2));
 
             if(depth1 == -1 || depth2 == -1){
-                violations.add(new InvalidSecurityRoleViolation(violatingMethod));
+                violations.add(new SeerSecurityConstraintViolation(ViolationType.INVALID_ROLE, violatingMethod));
             } else if(depth2 > depth1){
-                SeerSecurityNode n1 = context.getRoot().search(r1.getFormattedRoleName());
-                boolean hierarchy = n1.childContains(r2.getFormattedRoleName());
+                SeerSecurityNode n1 = context.getRoot().search(getFormattedRoleName(r1));
+                boolean hierarchy = n1.childContains(getFormattedRoleName(r2));
                 if(hierarchy){
-                    violations.add(new HierarchyConstraintViolation(violatingMethod));
+                    violations.add(new SeerSecurityConstraintViolation(ViolationType.HIERARCHY, violatingMethod));
                 } else {
-                    violations.add(new UnrelatedAccessConstraintViolation(violatingMethod));
+                    violations.add(new SeerSecurityConstraintViolation(ViolationType.UNRELATED, violatingMethod));
                 }
             } else if(depth2 < depth1){
-                SeerSecurityNode n2 = context.getRoot().search(r2.getFormattedRoleName());
-                boolean hierarchy = n2.childContains(r1.getFormattedRoleName());
+                SeerSecurityNode n2 = context.getRoot().search(getFormattedRoleName(r2));
+                boolean hierarchy = n2.childContains(getFormattedRoleName(r1));
                 if(hierarchy){
-                    violations.add(new HierarchyConstraintViolation(violatingMethod));
+                    violations.add(new SeerSecurityConstraintViolation(ViolationType.HIERARCHY, violatingMethod));
                 } else {
-                    violations.add(new UnrelatedAccessConstraintViolation(violatingMethod));
+                    violations.add(new SeerSecurityConstraintViolation(ViolationType.UNRELATED, violatingMethod));
                 }
             } else {
-                violations.add(new UnrelatedAccessConstraintViolation(violatingMethod));
+                violations.add(new SeerSecurityConstraintViolation(ViolationType.UNRELATED, violatingMethod));
             }
         }
 
         return violations;
+    }
+
+    public String getFormattedRoleName(String roleName){
+        if(roleName.contains("ROLE_")){
+            int startNdx = roleName.indexOf("_") + 1;
+            return roleName.substring(startNdx);
+        } else {
+            return roleName;
+        }
     }
 }
