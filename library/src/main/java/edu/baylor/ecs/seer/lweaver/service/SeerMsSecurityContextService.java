@@ -50,9 +50,9 @@ public class SeerMsSecurityContextService {
         for ( CtClass ctClass : ctClasses ) {
             securityFilterContext.doFilter(ctClass, rootMethods);
         }
-        securityContext.setSecurityRoots(rootMethods);
 
-        reduceMethodRoles(securityContext);
+        reduceMethodRoles(rootMethods, securityContext.getRoot());
+        securityContext.setSecurityRoots(rootMethods);
 
         Map<String, SecurityMethod> map = buildMap(securityContext);
 
@@ -66,8 +66,12 @@ public class SeerMsSecurityContextService {
                                             .filter(x -> x.getRoles().size() > 1)
                                             .collect(Collectors.toList());
 
-        Set<SeerSecurityConstraintViolation> violations = findViolations(securityContext, violatingMethods);
-        securityContext.setSecurityViolations(violations);
+        Set<SeerSecurityConstraintViolation> roleViolations = findFlowViolations(securityContext, violatingMethods);
+        Set<SeerSecurityEntityAccessViolation> entityAccessViolations = findApiViolations(securityContext, rootMethods);
+
+        securityContext.setRoleViolations(roleViolations);
+        securityContext.setEntityAccessViolations(entityAccessViolations);
+
         return securityContext;
     }
 
@@ -111,16 +115,16 @@ public class SeerMsSecurityContextService {
         return roleTree;
     }
 
-    private void reduceMethodRoles(SeerSecurityContext context){
-        for(SecurityRootMethod method : context.getSecurityRoots()){
+    private void reduceMethodRoles(Set<SecurityRootMethod> rootMethods, SeerSecurityNode root){
+        for(SecurityRootMethod method : rootMethods){
             if(method.getRoles().size() > 0){
                 List<String> roles = new ArrayList<>(method.getRoles());
 
-                int maxDepth = context.getRoot().depth(getFormattedRoleName(roles.get(0)));
+                int maxDepth = root.depth(getFormattedRoleName(roles.get(0)));
                 String minPermission = roles.get(0);
 
                 for(int i = 1; i < roles.size(); i++){
-                    int depth = context.getRoot().depth(getFormattedRoleName(roles.get(i)));
+                    int depth = root.depth(getFormattedRoleName(roles.get(i)));
                     if(depth > maxDepth){
                         minPermission = roles.get(i);
                         maxDepth = depth;
@@ -165,7 +169,7 @@ public class SeerMsSecurityContextService {
         return allSecurityMethods;
     }
 
-    private Set<SeerSecurityConstraintViolation> findViolations(SeerSecurityContext context, List<SecurityMethod> violatingMethods){
+    private Set<SeerSecurityConstraintViolation> findFlowViolations(SeerSecurityContext context, List<SecurityMethod> violatingMethods){
         Set<SeerSecurityConstraintViolation> violations = new HashSet<>();
 
         for(SecurityMethod violatingMethod : violatingMethods){
@@ -196,6 +200,44 @@ public class SeerMsSecurityContextService {
                 }
             } else {
                 violations.add(new SeerSecurityConstraintViolation(ViolationType.UNRELATED, violatingMethod));
+            }
+        }
+
+        return violations;
+    }
+
+    private Set<SeerSecurityEntityAccessViolation> findApiViolations(SeerSecurityContext context, Set<SecurityRootMethod> allEntryPoints){
+        Set<SeerSecurityEntityAccessViolation> violations = new HashSet<>();
+
+        List<SecurityRootMethod> asList = new ArrayList<>(allEntryPoints);
+
+        for(int i = 0; i < asList.size() - 1; i++){
+            SecurityRootMethod this_ = asList.get(i);
+
+            for(int j = i + 1; j < asList.size(); j++){
+                SecurityRootMethod that_ = asList.get(j);
+
+                // Check that they are not the same method
+                if(!this_.getMethodName().equals(that_.getMethodName())){
+
+                    // If they have the same HTTP type then there could be a violation
+                    if(this_.getHttpType() == that_.getHttpType()){
+
+                        // If they have the same parameters then there could be a violation
+                        if(this_.getParameters().equals(that_.getParameters())) {
+
+                            // If they have the same return type then there could be a violation
+                            if(this_.getReturnType() != null && that_.getReturnType() != null && this_.getReturnType().equals(that_.getReturnType())) {
+
+                                // If their roles are not equal then it's a violation
+                                if (!this_.getRoles().equals(that_.getRoles())) {
+                                    violations.add(new SeerSecurityEntityAccessViolation(ViolationType.ENTITY_ACCESS, this_, that_));
+                                }
+                            }
+                        }
+                    }
+
+                }
             }
         }
 

@@ -2,10 +2,7 @@ package edu.baylor.ecs.seer.lweaver.service;
 
 import edu.baylor.ecs.seer.common.security.HttpType;
 import edu.baylor.ecs.seer.common.security.SecurityRootMethod;
-import javassist.CannotCompileException;
-import javassist.CtClass;
-import javassist.CtMethod;
-import javassist.NotFoundException;
+import javassist.*;
 import javassist.bytecode.AnnotationsAttribute;
 import javassist.bytecode.MethodInfo;
 import javassist.bytecode.annotation.Annotation;
@@ -84,6 +81,20 @@ public class SecurityFilterGeneralAnnotationStrategy implements SecurityFilterSt
 
                     rootMethod.setParameters(params_s);
                 }
+
+                String returnType = "";
+                try {
+                    CtClass returnClazz = ctMethod.getReturnType();
+
+                    if(returnClazz.subtypeOf(ClassPool.getDefault().get(Collection.class.getName()))){
+                        returnType = getReturnType(ctMethod.getGenericSignature());
+                    } else {
+                        returnType = returnClazz.getName();
+                    }
+                } catch (NotFoundException e) {
+                    // returnType = e.getMessage();
+                }
+                rootMethod.setReturnType(returnType);
 
                 if (attr != null) {
                     Annotation[] methodAnnotations = attr.getAnnotations();
@@ -192,5 +203,46 @@ public class SecurityFilterGeneralAnnotationStrategy implements SecurityFilterSt
         // java.lang.Object -> (java.lang.Object)
         pckge = "(" + pckge + ")";
         return pckge;
+    }
+
+    private String getReturnType(String sig){
+        if(sig == null){
+            return "";
+        }
+        String returnType = sig;
+
+        // ()Ljava/util/List<Ledu/baylor/ecs/qms/model/Configuration;>; -> Ljava/util/List<Ledu/baylor/ecs/qms/model/Configuration;>;
+        int ndx = sig.lastIndexOf(")");
+        returnType = returnType.substring(ndx + 1);
+
+        // Ljava/util/List<Ledu/baylor/ecs/qms/model/Configuration;>; -> java/util/List<Ledu/baylor/ecs/qms/model/Configuration;>;
+        if(returnType.startsWith("L")){
+            returnType = returnType.substring(1);
+        }
+
+        // java/util/List<Ledu/baylor/ecs/qms/model/Configuration;>; -> java/util/List
+        String outerClass = returnType.substring(0, returnType.indexOf("<"));
+
+        // java/util/List -> java.util.List
+        outerClass = outerClass.replaceAll("/", ".");
+
+        int startNdx = returnType.indexOf("<") + 1;
+        int endNdx = returnType.lastIndexOf(">");
+
+        // java/util/List<Ledu/baylor/ecs/qms/model/Configuration;>; -> Ledu/baylor/ecs/qms/model/Configuration;
+        String innerClass = returnType.substring(startNdx, endNdx);
+
+        // Ledu/baylor/ecs/qms/model/Configuration; -> edu/baylor/ecs/qms/model/Configuration;
+        if(innerClass.startsWith("L")){
+            innerClass = innerClass.substring(1);
+        }
+
+        // edu/baylor/ecs/qms/model/Configuration; -> edu/baylor/ecs/qms/model/Configuration
+        innerClass = innerClass.replaceAll(";", "");
+
+        // edu/baylor/ecs/qms/model/Configuration -> edu.baylor.ecs.qms.model.Configuration
+        innerClass = innerClass.replaceAll("/", ".");
+
+        return outerClass.concat("<").concat(innerClass).concat(">");
     }
 }
