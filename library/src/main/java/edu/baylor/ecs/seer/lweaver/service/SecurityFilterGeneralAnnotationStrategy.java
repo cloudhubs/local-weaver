@@ -15,6 +15,7 @@ import javassist.bytecode.annotation.ArrayMemberValue;
 import javassist.bytecode.annotation.MemberValue;
 import javassist.expr.ExprEditor;
 import javassist.expr.MethodCall;
+import org.springframework.util.StringUtils;
 
 import java.util.*;
 
@@ -30,6 +31,9 @@ public class SecurityFilterGeneralAnnotationStrategy implements SecurityFilterSt
         }
 
         AnnotationsAttribute annotationsAttribute = (AnnotationsAttribute) clazz.getClassFile().getAttribute(AnnotationsAttribute.visibleTag);
+        if(annotationsAttribute == null){
+            return true;
+        }
         Annotation[] clazzAnnotations = annotationsAttribute.getAnnotations();
 
         boolean isController = false;
@@ -98,26 +102,32 @@ public class SecurityFilterGeneralAnnotationStrategy implements SecurityFilterSt
 
                             try {
                                 ctMethod.instrument(
-                                        new ExprEditor() {
-                                            public void edit(MethodCall m) {
+                                    new ExprEditor() {
+                                        public void edit(MethodCall m) {
 
-                                                CtMethod innerMethod;
-                                                try {
-                                                    innerMethod = m.getMethod();
-                                                } catch (Exception ex) {
-                                                    return;
-                                                }
+                                            String fullSignature = "";
+                                            try{
+                                                CtMethod meth = m.getMethod();
+                                                fullSignature = meth.getLongName();
+                                            } catch (NotFoundException e){
+                                                String className = m.getClassName();
+                                                String methodName = m.getMethodName();
+                                                String signature = sigToPackage(m.getSignature());
+                                                fullSignature = className.concat(".").concat(methodName).concat(signature);
+                                            }
 
-                                                if (!innerMethod.getLongName().startsWith("java.")) {
-                                                    securityMethods
-                                                            .stream()
-                                                            .filter(x -> x.getMethodName()
-                                                                    .equals(ctMethod.getLongName()))
-                                                            .findFirst()
-                                                            .ifPresent(mthd -> mthd.getChildMethods().add(new SecurityMethod(innerMethod.getLongName())));
-                                                }
+                                            final String sig = fullSignature;
+
+                                            if (!fullSignature.startsWith("java.")) {
+                                                securityMethods
+                                                        .stream()
+                                                        .filter(x -> x.getMethodName()
+                                                                .equals(ctMethod.getLongName()))
+                                                        .findFirst()
+                                                        .ifPresent(mthd -> mthd.getChildMethods().add(new SecurityMethod(sig)));
                                             }
                                         }
+                                    }
                                 );
                             } catch (CannotCompileException cex) {
                                 System.out.println(cex.toString());
@@ -145,5 +155,38 @@ public class SecurityFilterGeneralAnnotationStrategy implements SecurityFilterSt
         }
 
         return true;
+    }
+
+    private String sigToPackage(String sig){
+        // Removes the return value
+        String pckge = sig.substring(0, sig.lastIndexOf(")") + 1);
+
+        // Remove parentheses for parsing - will be added at then end
+        pckge = pckge.replaceAll("[(]", "");
+        pckge = pckge.replaceAll("[)]", "");
+
+        // Ljava/lang/Object; -> java/lang/Object;
+        if(pckge.startsWith("L")){
+            pckge = pckge.substring(1);
+        }
+
+        // java/lang/Object; -> java.lang.Object;
+        pckge = pckge.replaceAll("/", ".");
+
+        // java.lang.Object; -> java.lang.Object
+        if(pckge.contains(";")){
+            int count = StringUtils.countOccurrencesOf(pckge, ";");
+            if(count == 1){
+                pckge = pckge.replaceAll(";", "");
+            } else {
+                int lastNdx = pckge.lastIndexOf(";");
+                pckge = pckge.substring(0, lastNdx);
+                pckge = pckge.replaceAll(";", ",");
+            }
+        }
+
+        // java.lang.Object -> (java.lang.Object)
+        pckge = "(" + pckge + ")";
+        return pckge;
     }
 }
