@@ -66,7 +66,8 @@ public class SeerMsSecurityContextService {
                                             .filter(x -> x.getRoles().size() > 1)
                                             .collect(Collectors.toList());
 
-        Set<SeerSecurityConstraintViolation> roleViolations = findFlowViolations(securityContext, violatingMethods);
+        Set<SeerSecurityConstraintViolation> roleViolations = findEndpointRoleViolations(securityContext, rootMethods);
+        roleViolations.addAll(findFlowViolations(securityContext, violatingMethods));
         Set<SeerSecurityEntityAccessViolation> entityAccessViolations = findApiViolations(securityContext, rootMethods);
 
         securityContext.setRoleViolations(roleViolations);
@@ -169,6 +170,20 @@ public class SeerMsSecurityContextService {
         return allSecurityMethods;
     }
 
+    private Set<SeerSecurityConstraintViolation> findEndpointRoleViolations(SeerSecurityContext context, Set<SecurityRootMethod> allEntryPoints){
+        Set<SeerSecurityConstraintViolation> violations = new HashSet<>();
+
+        for(SecurityRootMethod rootMethod : allEntryPoints){
+            for(String s : rootMethod.getRoles()) {
+                if (context.getRoot().depth(s) == -1){
+                    violations.add(new SeerSecurityConstraintViolation(ViolationType.INVALID_ROLE, rootMethod.getMethodName(), rootMethod.getRoles()));
+                }
+            }
+        }
+
+        return violations;
+    }
+
     private Set<SeerSecurityConstraintViolation> findFlowViolations(SeerSecurityContext context, List<SecurityMethod> violatingMethods){
         Set<SeerSecurityConstraintViolation> violations = new HashSet<>();
 
@@ -180,26 +195,27 @@ public class SeerMsSecurityContextService {
             int depth1 = context.getRoot().depth(getFormattedRoleName(r1));
             int depth2 = context.getRoot().depth(getFormattedRoleName(r2));
 
-            if(depth1 == -1 || depth2 == -1){
-                violations.add(new SeerSecurityConstraintViolation(ViolationType.INVALID_ROLE, violatingMethod));
-            } else if(depth2 > depth1){
-                SeerSecurityNode n1 = context.getRoot().search(getFormattedRoleName(r1));
-                boolean hierarchy = n1.childContains(getFormattedRoleName(r2));
-                if(hierarchy){
-                    violations.add(new SeerSecurityConstraintViolation(ViolationType.HIERARCHY, violatingMethod));
+            if(!(depth1 == -1 || depth2 == -1)) {
+                // violations.add(new SeerSecurityConstraintViolation(ViolationType.INVALID_ROLE, violatingMethod));
+                if (depth2 > depth1) {
+                    SeerSecurityNode n1 = context.getRoot().search(getFormattedRoleName(r1));
+                    boolean hierarchy = n1.childContains(getFormattedRoleName(r2));
+                    if (hierarchy) {
+                        violations.add(new SeerSecurityConstraintViolation(ViolationType.HIERARCHY, violatingMethod));
+                    } else {
+                        violations.add(new SeerSecurityConstraintViolation(ViolationType.UNRELATED, violatingMethod));
+                    }
+                } else if (depth2 < depth1) {
+                    SeerSecurityNode n2 = context.getRoot().search(getFormattedRoleName(r2));
+                    boolean hierarchy = n2.childContains(getFormattedRoleName(r1));
+                    if (hierarchy) {
+                        violations.add(new SeerSecurityConstraintViolation(ViolationType.HIERARCHY, violatingMethod));
+                    } else {
+                        violations.add(new SeerSecurityConstraintViolation(ViolationType.UNRELATED, violatingMethod));
+                    }
                 } else {
                     violations.add(new SeerSecurityConstraintViolation(ViolationType.UNRELATED, violatingMethod));
                 }
-            } else if(depth2 < depth1){
-                SeerSecurityNode n2 = context.getRoot().search(getFormattedRoleName(r2));
-                boolean hierarchy = n2.childContains(getFormattedRoleName(r1));
-                if(hierarchy){
-                    violations.add(new SeerSecurityConstraintViolation(ViolationType.HIERARCHY, violatingMethod));
-                } else {
-                    violations.add(new SeerSecurityConstraintViolation(ViolationType.UNRELATED, violatingMethod));
-                }
-            } else {
-                violations.add(new SeerSecurityConstraintViolation(ViolationType.UNRELATED, violatingMethod));
             }
         }
 
