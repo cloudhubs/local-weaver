@@ -100,8 +100,13 @@ public class SecurityFilterGeneralAnnotationStrategy implements SecurityFilterSt
                     Annotation[] methodAnnotations = attr.getAnnotations();
                     allMethodAnnotations.addAll(Arrays.asList(methodAnnotations));
 
+                    boolean hasSecurity = false;
+                    boolean hasHttpType = false;
                     for (Annotation annotation : allMethodAnnotations) {
                         if (annotation.getTypeName().equals("javax.annotation.security.RolesAllowed")) {
+
+                            hasSecurity = true;
+
                             Set<String> names = annotation.getMemberNames();
                             for (String name : names) {
                                 MemberValue value = annotation.getMemberValue(name);
@@ -149,18 +154,32 @@ public class SecurityFilterGeneralAnnotationStrategy implements SecurityFilterSt
                                 return false;
                             }
                         } else if (annotation.getTypeName().equals("org.springframework.web.bind.annotation.PostMapping")) {
+                            hasHttpType = true;
                             rootMethod.setHttpType(HttpType.POST);
                         } else if (annotation.getTypeName().equals("org.springframework.web.bind.annotation.GetMapping")){
+                            hasHttpType = true;
                             rootMethod.setHttpType(HttpType.GET);
                         } else if (annotation.getTypeName().equals("org.springframework.web.bind.annotation.PutMapping")){
+                            hasHttpType = true;
                             rootMethod.setHttpType(HttpType.PUT);
                         } else if (annotation.getTypeName().equals("org.springframework.web.bind.annotation.DeleteMapping")){
+                            hasHttpType = true;
                             rootMethod.setHttpType(HttpType.DELETE);
                         } else if (annotation.getTypeName().equals("org.springframework.web.bind.annotation.PatchMapping")){
+                            hasHttpType = true;
                             rootMethod.setHttpType(HttpType.PATCH);
                         } else if (annotation.getTypeName().equals("org.springframework.web.bind.annotation.RequestMapping")){
+                            hasHttpType = true;
                             rootMethod.setHttpType(HttpType.NONE);
                         }
+                    }
+
+                    if(!hasSecurity){
+                        rootMethod.getRoles().add("SEER_ALL_ACCESS_ALLOWED");
+                    }
+
+                    if(!hasHttpType){
+                        rootMethod.setHttpType(HttpType.NONE);
                     }
                 } else {
                     rootMethod.getRoles().add("SEER_ALL_ACCESS_ALLOWED");

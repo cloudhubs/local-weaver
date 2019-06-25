@@ -175,7 +175,9 @@ public class SeerMsSecurityContextService {
 
         for(SecurityRootMethod rootMethod : allEntryPoints){
             for(String s : rootMethod.getRoles()) {
-                if (context.getRoot().depth(s) == -1){
+                if (s.equals("SEER_ALL_ACCESS_ALLOWED")) {
+                    violations.add(new SeerSecurityConstraintViolation(ViolationType.UNRESTRICTED_ACCESS, rootMethod.getMethodName(), rootMethod.getRoles()));
+                } else if (context.getRoot().depth(s) == -1){
                     violations.add(new SeerSecurityConstraintViolation(ViolationType.INVALID_ROLE, rootMethod.getMethodName(), rootMethod.getRoles()));
                 }
             }
@@ -195,7 +197,7 @@ public class SeerMsSecurityContextService {
             int depth1 = context.getRoot().depth(getFormattedRoleName(r1));
             int depth2 = context.getRoot().depth(getFormattedRoleName(r2));
 
-            if(!(depth1 == -1 || depth2 == -1)) {
+            if(r1.equals("SEER_ALL_ACCESS_ALLOWED") || r2.equals("SEER_ALL_ACCESS_ALLOWED") || (depth1 != -1 && depth2 != -1)) {
                 // violations.add(new SeerSecurityConstraintViolation(ViolationType.INVALID_ROLE, violatingMethod));
                 if (depth2 > depth1) {
                     SeerSecurityNode n1 = context.getRoot().search(getFormattedRoleName(r1));
