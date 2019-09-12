@@ -58,7 +58,7 @@ public class ResourceService {
      * @return a {@link List} of {@link String} objects, each of which represents a JAR or WAR
      * file in the prject directory to be analyzed
      */
-    List<String> getResourcePaths(String folderPath){
+    public List<String> getResourcePaths(String folderPath){
         String directory = new File(folderPath).getAbsolutePath();
         Path start = Paths.get(directory);
         int maxDepth = 15;
@@ -135,7 +135,7 @@ public class ResourceService {
      *
      * @return a {@link List} of {@link CtClass} objects loaded from a particular JAR file
      */
-    List<CtClass> getCtClasses(String file, String organizationPath){
+    public List<CtClass> getCtClasses(String file, String organizationPath){
         ClassPool cp = ClassPool.getDefault();
         List<CtClass> ctClasses = new ArrayList<>();
         // 1. Get resource
