@@ -1,6 +1,5 @@
 package edu.baylor.ecs.seer.lweaver.service;
 
-import edu.baylor.ecs.seer.common.security.SecurityMethod;
 import edu.baylor.ecs.seer.common.security.SecurityRootMethod;
 import javassist.CtClass;
 

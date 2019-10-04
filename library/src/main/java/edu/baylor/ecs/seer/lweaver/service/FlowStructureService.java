@@ -1,6 +1,5 @@
 package edu.baylor.ecs.seer.lweaver.service;
 
-import edu.baylor.ecs.seer.common.context.SeerFlowContext;
 import edu.baylor.ecs.seer.common.entity.SeerFlowMethodRepresentation;
 import edu.baylor.ecs.seer.common.flow.SeerFlowMethod;
 import javassist.CannotCompileException;
@@ -13,34 +12,19 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * The BytecodeFlowStructureService service constructs a
- * {@link edu.baylor.ecs.seer.common.context.SeerFlowContext} from a {@link List}
- * of {@link CtClass} objects. The {@link CtClass} objects are extracted from
- * {@link SeerContextService#generateMsContexts(List, String)}.
- *
- * @author  Andrew Walker
- * @version 1.0
- * @since   0.3.0
- */
 @Service
 public class FlowStructureService {
 
-    /**
-     * This method returns a {@link edu.baylor.ecs.seer.common.context.SeerFlowContext} that holds
-     * a {@link List} of {@link SeerFlowMethodRepresentation} objects for each method contained in
-     * the microservice.
-     *
-     * @param  classes the {@link List} of {@link CtClass} objects from the microservice
-     *
-     * @return an initial {@link edu.baylor.ecs.seer.common.context.SeerFlowContext}
-     */
-    SeerFlowContext process(List<CtClass> classes){
+//    SeerFlowContext process(List<CtClass> classes){
+//        SeerFlowContext seerFlowContext = new SeerFlowContext();
+//        seerFlowContext.setSeerFlowMethods(methodRepresentations);
+//        return seerFlowContext;
+//    }
+
+    public List<SeerFlowMethodRepresentation> processClazz(CtClass clazz) {
         List<SeerFlowMethodRepresentation> methodRepresentations = new ArrayList<>();
 
         // Loop through every class in the array
-        for(CtClass clazz : classes){
-
             // Retrieve all the methods of a class
             CtMethod[] methods = clazz.getDeclaredMethods();
 
@@ -57,19 +41,19 @@ public class FlowStructureService {
                 // Instrument the method to pull out the method calls
                 try {
                     method.instrument(
-                        new ExprEditor() {
-                            public void edit(MethodCall m) {
+                      new ExprEditor() {
+                          public void edit(MethodCall m) {
 
-                                // Retrieve the list of subMethods
-                                List<SeerFlowMethod> subMethodList = representation.getChildren();
+                              // Retrieve the list of subMethods
+                              List<SeerFlowMethod> subMethodList = representation.getChildren();
 
-                                // Build the key for the subMethod
-                                SeerFlowMethod subMethodKey = new SeerFlowMethod();
-                                subMethodKey.setClassName(m.getClassName());
-                                subMethodKey.setMethodName(m.getMethodName());
-                                subMethodList.add(subMethodKey);
-                            }
-                        }
+                              // Build the key for the subMethod
+                              SeerFlowMethod subMethodKey = new SeerFlowMethod();
+                              subMethodKey.setClassName(m.getClassName());
+                              subMethodKey.setMethodName(m.getMethodName());
+                              subMethodList.add(subMethodKey);
+                          }
+                      }
                     );
                 } catch (CannotCompileException e){
                     System.out.println(e.toString());
@@ -78,10 +62,7 @@ public class FlowStructureService {
                 methodRepresentations.add(representation);
 
             }
-        }
 
-        SeerFlowContext seerFlowContext = new SeerFlowContext();
-        seerFlowContext.setSeerFlowMethods(methodRepresentations);
-        return seerFlowContext;
+            return methodRepresentations;
     }
 }

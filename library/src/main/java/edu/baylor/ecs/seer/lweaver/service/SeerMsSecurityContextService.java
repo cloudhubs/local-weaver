@@ -1,8 +1,6 @@
 package edu.baylor.ecs.seer.lweaver.service;
 
 import edu.baylor.ecs.seer.common.SeerSecurityNode;
-import edu.baylor.ecs.seer.common.context.SeerContext;
-import edu.baylor.ecs.seer.common.context.SeerMsContext;
 import edu.baylor.ecs.seer.common.context.SeerRequestContext;
 import edu.baylor.ecs.seer.common.context.SeerSecurityContext;
 import edu.baylor.ecs.seer.common.security.*;
@@ -14,7 +12,7 @@ import java.util.stream.Collectors;
 
 /**
  * The SeerMsEntityContextService service constructs a
- * {@link edu.baylor.ecs.seer.common.context.SeerSecurityContext} from an initial list of
+ * {@link edu.baylor.ecs.cli.dence.contexts.context.SeerSecurityContext} from an initial list of
  * {@link javassist.CtClass} and a {@link SeerRequestContext}.
  *
  * @author  Jan Svacina

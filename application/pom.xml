@@ -17,7 +17,8 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <java.version>12</java.version>
+        <java.version>8</java.version>
+        <project.deployment.skip>false</project.deployment.skip>
     </properties>
 
     <dependencies>

@@ -1,10 +1,11 @@
 package edu.baylor.ecs.seer.lweaver.service;
 
-import edu.baylor.ecs.seer.common.context.*;
-import edu.baylor.ecs.seer.common.entity.EntityModel;
+import edu.baylor.ecs.seer.common.context.SeerContext;
+import edu.baylor.ecs.seer.common.context.SeerMsContext;
+import edu.baylor.ecs.seer.common.context.SeerRequestContext;
+import edu.baylor.ecs.seer.common.context.SeerSecurityContext;
 import javassist.CtClass;
 import org.springframework.stereotype.Service;
-
 import java.util.*;
 
 /**
@@ -13,7 +14,7 @@ import java.util.*;
  *
  * </p>
  *
- * This service depends on {@link ResourceService}, {@link SeerMsSecurityContextService}, {@link SeerMsEntityContextService},
+ * This service depends on {@link ResourceService}, {@link SeerMsSecurityContextService}, {@link SeerMsComponentContextService},
  * {@link FlowStructureService}, {@link BytecodeFlowStructureService}, {@link SeerMsApiContextService} services
  * to construct the various aspects of the {@link SeerContext}.
  *
@@ -31,13 +32,9 @@ public class SeerContextService {
     private final SeerMsSecurityContextService securityService;
 
     // Service for managing the entity aspect of the microservices
-    private final SeerMsEntityContextService entityService;
+    private final SeerMsComponentContextService componentService;
 
-    // Service for managing the flow aspect of the microservices
-    private final FlowStructureService flowService;
 
-    // Service for managing the bytecode flow aspect of the microservices
-    private final BytecodeFlowStructureService bytecodeService;
 
     // Service for managing the api aspect of the microservices
     private final SeerMsApiContextService apiSerivce;
@@ -50,17 +47,15 @@ public class SeerContextService {
      *
      * @param resourceService service for managing the resources in the project
      * @param securityService service for managing the security aspect of the microservices
-     * @param entityService service for managing the entity aspect of the microservices
+     * @param componentService service for managing the entity aspect of the microservices
      * @param flowService service for managing the flow aspect of the microservices
      * @param bytecodeService service for managing the bytecode flow aspect of the microservices
      * @param apiSerivce service for managing the api aspect of the microservices
      */
-    public SeerContextService(ResourceService resourceService, SeerMsSecurityContextService securityService, SeerMsEntityContextService entityService, FlowStructureService flowService, BytecodeFlowStructureService bytecodeService, SeerMsApiContextService apiSerivce) {
+    public SeerContextService(ResourceService resourceService, SeerMsSecurityContextService securityService, SeerMsComponentContextService componentService, FlowStructureService flowService, BytecodeFlowStructureService bytecodeService, SeerMsApiContextService apiSerivce) {
         this.resourceService = resourceService;
         this.securityService = securityService;
-        this.entityService = entityService;
-        this.flowService = flowService;
-        this.bytecodeService = bytecodeService;
+        this.componentService = componentService;
         this.apiSerivce = apiSerivce;
     }
 
@@ -78,8 +73,8 @@ public class SeerContextService {
         List<String> resourcePaths = getResourcePaths(req);
         List<SeerMsContext> msContexts = generateMsContexts(resourcePaths, req);
         seerContext.setMsContexts(msContexts);
-        SeerSecurityContext seerSecurityContext = generateSecurityContext(seerContext.getRequest());
-        seerContext.setSecurity(seerSecurityContext);
+        //SeerSecurityContext seerSecurityContext = generateSecurityContext(seerContext.getRequest());
+        //seerContext.setSecurity(seerSecurityContext);
         return seerContext;
     }
 
@@ -130,40 +125,19 @@ public class SeerContextService {
             } else {
                 msContext.setModuleName(path.substring(path.lastIndexOf('/') + 1, lastIndex));
             }
+
             List<CtClass> ctClasses = resourceService.getCtClasses(path, organizationPath);
             allCtClasses.addAll(ctClasses);
 
-            Set<Properties> properties = resourceService.getProperties(path, organizationPath);
-            if (properties.size() > 0){
-                Properties prop = properties.iterator().next();
-                String port = prop.getProperty("port");
-                if(port == null){
-                    port = prop.getProperty("server.port");
-                }
-                msContext.setPort(Integer.parseInt(port));
-            }
+            msContext.setComponents(componentService.getComponentClasses(ctClasses));
 
-            msContext.setEntity(entityService.getSeerEntityContext(ctClasses));
-            for (EntityModel e: msContext.getEntity().getEntities()) {
-                e.setModuleName(msContext.getModuleName());
-            }
-
-            if (msContext.getEntity().getEntities().size() > 0){
-
-                SeerFlowContext seerFlowContext = flowService.process(ctClasses);
-                bytecodeService.process(seerFlowContext);
-                msContext.setFlow(seerFlowContext);
-
-                SeerApiContext seerApiContext = apiSerivce.createSeerApiContext(ctClasses);
-                msContext.setApi(seerApiContext);
-            }
-
-            SeerSecurityContext seerSecurityContext = securityService.getMsSeerSecurityContext(ctClasses, request);
-            msContext.setSecurity(seerSecurityContext);
+            //SeerSecurityContext seerSecurityContext = securityService.getMsSeerSecurityContext(ctClasses, request);
+            //msContext.setSecurity(seerSecurityContext);
 
             msContexts.add(msContext);
 
         }
+
         return msContexts;
     }
 

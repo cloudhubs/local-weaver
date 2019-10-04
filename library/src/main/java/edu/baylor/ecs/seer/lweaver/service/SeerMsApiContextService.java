@@ -2,8 +2,8 @@ package edu.baylor.ecs.seer.lweaver.service;
 
 import edu.baylor.ecs.seer.common.api.SeerApiMethod;
 import edu.baylor.ecs.seer.common.api.SeerApiType;
-import edu.baylor.ecs.seer.common.context.*;
-import edu.baylor.ecs.seer.common.entity.EntityModel;
+import edu.baylor.ecs.seer.common.components.ComponentModel;
+import edu.baylor.ecs.seer.common.context.SeerApiContext;
 import javassist.CtClass;
 import javassist.CtMethod;
 import javassist.NotFoundException;
@@ -16,7 +16,7 @@ import java.util.List;
 
 /**
  * The SeerMsApiContextService service constructs a
- * {@link edu.baylor.ecs.seer.common.context.SeerApiContext} from an initial list of
+ * {@link edu.baylor.ecs.cli.dence.contexts.context.SeerApiContext} from an initial list of
  * {@link javassist.CtClass}.
  *
  * @author  Jan Svacina
@@ -104,16 +104,8 @@ public class SeerMsApiContextService {
         return seerApiMethod;
     }
 
-    /**
-     * This method constructs an {@link EntityModel} representing the parameter type of the API
-     * call from the given {@link CtMethod}.
-     *
-     * @param ctMethod the {@link CtMethod} that is the API method
-     *
-     * @return an {@link EntityModel} representing the parameter type
-     */
-    private EntityModel getParameterType(CtMethod ctMethod) {
-        EntityModel entityModel = new EntityModel();
+    private ComponentModel getParameterType(CtMethod ctMethod) {
+        ComponentModel entityModel = new ComponentModel();
         try {
             CtClass[] parameterTypes = ctMethod.getParameterTypes();
             for (CtClass p: parameterTypes) {
@@ -127,16 +119,8 @@ public class SeerMsApiContextService {
         return entityModel;
     }
 
-    /**
-     * This method constructs an {@link EntityModel} representing the return type of the API
-     * call from the given {@link CtMethod}.
-     *
-     * @param ctMethod the {@link CtMethod} that is the API method
-     *
-     * @return an {@link EntityModel} representing the return type
-     */
-    private EntityModel getReturnType(CtMethod ctMethod) {
-        EntityModel entityModel = new EntityModel();
+    private ComponentModel getReturnType(CtMethod ctMethod) {
+        ComponentModel entityModel = new ComponentModel();
         try {
             CtClass ctClass = ctMethod.getReturnType();
             entityModel.setClassNameShort(ctClass.getSimpleName());
@@ -163,7 +147,7 @@ public class SeerMsApiContextService {
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
         }
-        EntityModel entityModel = getReturnType(ctMethod);
+        ComponentModel entityModel = getReturnType(ctMethod);
         if (entityModel.getClassName().contains("edu.baylor.ecs.seer.usermanagement")){
             seerApiType = SeerApiType.OUT;
         }

@@ -1,7 +1,6 @@
 package edu.baylor.ecs.seer.lweaver.service;
 
 import edu.baylor.ecs.seer.common.FlowNode;
-import edu.baylor.ecs.seer.common.context.SeerFlowContext;
 import edu.baylor.ecs.seer.common.entity.SeerFlowMethodRepresentation;
 import javassist.ClassPool;
 import javassist.CtClass;
@@ -17,39 +16,14 @@ import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
-/**
- * The BytecodeFlowStructureService service constructs a
- * {@link edu.baylor.ecs.seer.common.context.SeerFlowContext} from an initial
- * {@link edu.baylor.ecs.seer.common.context.SeerFlowContext} which contains a populated
- * {@link List} of {@link SeerFlowMethodRepresentation} objects. The entry method is
- * {@link BytecodeFlowStructureService#process(SeerFlowContext)}
- *
- * </p>
- *
- * The new {@link SeerFlowContext} will contain a {@link Map} of {@link FlowNode} objects representing
- * the bytecode instructions of the methods contained in the {@link SeerFlowContext}
- *
- * @author  Andrew Walker
- * @version 1.0
- * @since   0.3.0
- */
+
 @Service
 public class BytecodeFlowStructureService {
 
-    /**
-     * This method returns a {@link edu.baylor.ecs.seer.common.context.SeerFlowContext} that now holds
-     * the map representing the bytecode flow for each of the {@link SeerFlowMethodRepresentation}
-     * objects in the {@link SeerFlowContext}. This is the entry method for {@link BytecodeFlowStructureService}.
-     *
-     * @param  flowContext the initial {@link SeerFlowContext} containing a populated {@link List}
-     *                     of {@link SeerFlowMethodRepresentation} objects
-     *
-     * @return the {@link SeerFlowContext} representing the bytecode flow in the microservice
-     */
-    SeerFlowContext process(SeerFlowContext flowContext){
+    void process(List<SeerFlowMethodRepresentation> methodRepresentations){
 
         // Loop through every class in the array
-        for(SeerFlowMethodRepresentation methodRepresentation : flowContext.getSeerFlowMethods()) {
+        for(SeerFlowMethodRepresentation methodRepresentation : methodRepresentations) {
 
             // Setup some initial objects
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -91,7 +65,6 @@ public class BytecodeFlowStructureService {
             methodRepresentation.setNodes(nodes);
         }
 
-        return flowContext;
     }
 
     /**
@@ -179,18 +152,7 @@ public class BytecodeFlowStructureService {
 
     // Processing the bytecode will create a tree of nodes that will show the flow of the nodes
 
-    /**
-     * This method constructs a {@link Map} of {@link Integer} to {@link FlowNode} objects, each of which is a line of
-     * bytecode from a {@link String} of the raw bytecode from {@link FramePrinter#print(CtMethod)}.
-     * This is a private helper method called from {@link BytecodeFlowStructureService#process(SeerFlowContext)}.
-     *
-     * @param bytecode a {@link String} representing the raw bytecode for a method
-     *
-     * @return a {@link Map} of {@link Integer} to {@link FlowNode} objects, each of which is a line
-     * of bytecode
-     *
-     * @see <a href="http://www.javassist.org/tutorial/tutorial3.html">http://www.javassist.org/tutorial/tutorial3.html</a>
-     */
+
     private Map<Integer, FlowNode> processBytecode(String bytecode){
 
         // Filter out garbage lines in the bytecode
@@ -298,22 +260,6 @@ public class BytecodeFlowStructureService {
         return map;
     }
 
-    /**
-     * This method constructs a {@link Map} of {@link Integer} to {@link FlowNode} objects, each of which is a line of
-     * bytecode from an existing {@link Map} of {@link Integer} to {@link FlowNode} objects. Post
-     * processing is optional but will remove any filler nodes so the only ones that remain are the
-     * initial instruction and any logic nodes or method call nodes. This is a private helper method
-     * that can be called from {@link BytecodeFlowStructureService#process(SeerFlowContext)}.
-     *
-     * @deprecated
-     *
-     * @param map a {@link String} a {@link Map} of {@link Integer} to {@link FlowNode} objects
-     *
-     * @return a {@link Map} of {@link Integer} to {@link FlowNode} objects, each of which is a line
-     * of bytecode
-     *
-     * @see <a href="http://www.javassist.org/tutorial/tutorial3.html">http://www.javassist.org/tutorial/tutorial3.html</a>
-     */
     private Map<Integer, FlowNode> postProcessBytecode(Map<Integer, FlowNode> map){
 
         Set<Integer> importantNodes = new HashSet<>();

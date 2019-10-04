@@ -34,7 +34,8 @@ public class SecurityFilterGeneralAnnotationStrategy implements SecurityFilterSt
 
         boolean isController = false;
         for(Annotation annotation : clazzAnnotations){
-            if(annotation.getTypeName().equals("org.springframework.web.bind.annotation.RestController")){
+            if(annotation.getTypeName().equals("org.springframework.web.bind.annotation.RestController")
+            || annotation.getTypeName().equals("org.springframework.web.bind.annotation.Controller")){
                 isController = true;
                 break;
             }
