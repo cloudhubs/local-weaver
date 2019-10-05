@@ -51,7 +51,6 @@ public class SeerMsComponentContextService {
                     ComponentType.Type componentType = ComponentType.getComponentType(annotation.getTypeName());
                     if(!(componentType == null)){
                         switch (componentType) {
-
                             case ENTITY:
                                 entityClasses.add(ctClass);
                                 break;
