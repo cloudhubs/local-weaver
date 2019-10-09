@@ -39,7 +39,14 @@ public class SeerMsApiContextService {
         List<SeerApiMethod> apiMethods = new ArrayList<>();
         List<CtClass> apiClasses = getApiClasses(ctClassesApiIn);
         for (CtClass ctClass: apiClasses){
-            CtMethod[] ctMethods = ctClass.getMethods();
+            CtMethod[] ctMethods;
+            if(ctClass.isInterface()) {
+                System.out.println("I am an interface " + ctClass.getName());
+                ctMethods = ctClass.getDeclaredMethods();
+            } else {
+                System.out.println("I am not an interface " + ctClass.getName());
+                ctMethods = ctClass.getMethods();
+            }
             for (CtMethod ctMethod: ctMethods
             ) {
                 SeerApiMethod seerApiMethod = createSeerApiMethod(ctClass, ctMethod);

@@ -12,7 +12,6 @@ import javassist.NotFoundException;
 import javassist.bytecode.AnnotationsAttribute;
 import javassist.bytecode.annotation.Annotation;
 import javassist.bytecode.annotation.MemberValue;
-import org.springframework.stereotype.Repository;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -46,22 +45,14 @@ public class SeerMsComponentContextService {
     Set<CtClass> genericClasses = new HashSet<>();
 
     for (CtClass ctClass : allClasses) {
-        ComponentType.Type componentType = null;
+        ComponentType componentType;
 
-      AnnotationsAttribute annotationsAttribute =
-        (AnnotationsAttribute) ctClass.getClassFile().getAttribute(AnnotationsAttribute.visibleTag);
-      if (annotationsAttribute != null) {
-        Annotation[] annotations = annotationsAttribute.getAnnotations();
-        if(annotations.length < 1) {
-            componentType = getComponentClassWithoutAnnotation(ctClass);
+        Optional<Annotation[]> annotations = getAnnotationForClass(ctClass);
+        if(annotations.isPresent()){
+          componentType = getComponentWithAnnotation(ctClass, annotations.get());
         } else {
-            for (Annotation annotation : annotations) {
-                componentType = ComponentType.getComponentType(annotation.getTypeName());
-            }
-        }
-      } else {
           componentType = getComponentClassWithoutAnnotation(ctClass);
-      }
+        }
 
         switch (componentType) {
             case ENTITY:
@@ -82,24 +73,44 @@ public class SeerMsComponentContextService {
         }
     }
 
-    seerComponents.setEntities(deriveComponent(entityClasses, ComponentType.Type.ENTITY));
-    seerComponents.setControllers(deriveComponent(controllerClasses, ComponentType.Type.CONTROLLER));
-    seerComponents.setServices(deriveComponent(serviceClasses, ComponentType.Type.SERVICE));
-    seerComponents.setComponents(deriveComponent(genericClasses, ComponentType.Type.GENERIC_COMPONENT));
-    seerComponents.setRepositories(deriveComponent(repositoryClasses, ComponentType.Type.REPOSITORY));
+    seerComponents.setEntities(deriveComponent(entityClasses, ComponentType.ENTITY));
+    seerComponents.setControllers(deriveComponent(controllerClasses, ComponentType.CONTROLLER));
+    seerComponents.setServices(deriveComponent(serviceClasses, ComponentType.SERVICE));
+    seerComponents.setComponents(deriveComponent(genericClasses, ComponentType.GENERIC_COMPONENT));
+    seerComponents.setRepositories(deriveComponent(repositoryClasses, ComponentType.REPOSITORY));
 
     return seerComponents;
   }
 
-  private ComponentType.Type getComponentClassWithoutAnnotation(CtClass ctClass) {
-      if(ctClass.isInterface()){
-          return ComponentType.Type.REPOSITORY;
+  private Optional<Annotation[]> getAnnotationForClass(CtClass ctClass) {
+    AnnotationsAttribute annotationsAttribute =
+      (AnnotationsAttribute) ctClass.getClassFile().getAttribute(AnnotationsAttribute.visibleTag);
+    if (annotationsAttribute != null) {
+      Annotation[] annotations = annotationsAttribute.getAnnotations();
+      if(annotations.length < 1) {
+        return Optional.empty();
       } else {
-          return ComponentType.Type.GENERIC_COMPONENT;
+        return Optional.of(annotations);
       }
+    } else {
+      return Optional.empty();
+    }
   }
 
-  private List<ComponentModel> deriveComponent(Set<CtClass> componentClasses, ComponentType.Type componentType) {
+  private ComponentType getComponentClassWithoutAnnotation(CtClass ctClass) {
+      return getComponentTypeRaw(ctClass.getName());
+  }
+
+  private ComponentType getComponentWithAnnotation(CtClass ctClass, Annotation[] annotations) {
+    ComponentType componentType = null;
+    for (Annotation annotation : annotations) {
+      componentType = getComponentTypeAnnotation(annotation.getTypeName());
+      if(componentType != null) return componentType;
+    }
+    return getComponentClassWithoutAnnotation(ctClass);
+  }
+
+  private List<ComponentModel> deriveComponent(Set<CtClass> componentClasses, ComponentType componentType) {
 
     /*
      * ToDo: Different strategy for annotations on fields and setters (FieldAnnotationStrategy...)
@@ -130,7 +141,7 @@ public class SeerMsComponentContextService {
     return components;
   }
 
-  private List<SeerField> setFields(CtClass clazz, ComponentType.Type componentType) {
+  private List<SeerField> setFields(CtClass clazz, ComponentType componentType) {
     // Get all the public and private fields
     CtField[] fields = clazz.getFields();
     CtField[] privateFields = clazz.getDeclaredFields();
@@ -164,7 +175,7 @@ public class SeerMsComponentContextService {
         e.printStackTrace();
       }
 
-      if (componentType == ComponentType.Type.ENTITY) {
+      if (componentType == ComponentType.ENTITY) {
         applyEntityOptions(field, seerField);
       }
 
@@ -174,7 +185,7 @@ public class SeerMsComponentContextService {
     return seerFields;
   }
 
-  private List<SeerFlowMethodRepresentation> setMethods(CtClass clazz, ComponentType.Type componentType) {
+  private List<SeerFlowMethodRepresentation> setMethods(CtClass clazz, ComponentType componentType) {
     List<SeerFlowMethodRepresentation> methodRepresentations = flowService.processClazz(clazz);
     bytecodeService.process(methodRepresentations);
     return methodRepresentations;
@@ -222,4 +233,33 @@ public class SeerMsComponentContextService {
       }
     }
   }
+
+  private static ComponentType getComponentTypeAnnotation(String annotation) {
+    switch (annotation) {
+      case "javax.persistence.Entity":
+      case "javax.persistence.MappedSuperclass":
+        return ComponentType.ENTITY;
+      case "org.springframework.stereotype.Controller":
+      case "org.springframework.web.bind.annotation.RestController":
+        return ComponentType.CONTROLLER;
+      case "org.springframework.stereotype.Service":
+        return ComponentType.SERVICE;
+      case "org.springframework.stereotype.Repository":
+        return ComponentType.REPOSITORY;
+      case "org.springframework.boot.autoconfigure.SpringBootApplication":
+      case "org.springframework.stereotype.Component":
+    }
+    return null;
+  }
+
+  private static ComponentType getComponentTypeRaw(String componentName) {
+    String name = componentName.toLowerCase();
+    if(name.contains("repository")) return ComponentType.REPOSITORY;
+    if(name.contains("service")) return ComponentType.SERVICE;
+    if(name.contains("controller")) return ComponentType.CONTROLLER;
+    if(name.contains("entity")) return ComponentType.ENTITY;
+    else return ComponentType.GENERIC_COMPONENT;
+  }
+
+
 }
