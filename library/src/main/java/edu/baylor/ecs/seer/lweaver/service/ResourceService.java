@@ -100,7 +100,7 @@ public class ResourceService {
      * @return a {@link Set} of {@link Properties} objects loaded from the properties files
      * from the microservice
      */
-    Set<Properties> getProperties(String jarPath, String organizationPath) {
+    public Set<Properties> getProperties(String jarPath, String organizationPath) {
         Resource resource = getResource(jarPath);
         Set<Properties> properties = new HashSet<>();
         String uriString = getUriStringFromResource(resource);
