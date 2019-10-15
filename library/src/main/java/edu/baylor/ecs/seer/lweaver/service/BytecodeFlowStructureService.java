@@ -222,35 +222,44 @@ public class BytecodeFlowStructureService {
 
                 // If the node is a conditional:
                 //      add the new child from map
-                if(entry.getValue().getType().equals("conditional")){
-                    String[] values = entry.getValue().getRaw().split(" ");
-                    Integer next = Integer.parseInt(values[2]);
-                    FlowNode n = map.get(next);
-                    entry.getValue().addChild(n);
-                }
-                // If the node is a goto
-                //      break the existing condition
-                //      add the new child from map
-                else if (entry.getValue().getType().equals("goto")){
-                    String[] values = entry.getValue().getRaw().split(" ");
-
-                    Iterator<Integer> it = entry.getValue().getChildren().iterator();
-                    while (it.hasNext()) {
-                        it.next();
-                        it.remove();
+                switch (entry.getValue().getType()) {
+                    case "conditional": {
+                        String[] values = entry.getValue().getRaw().split(" ");
+                        Integer next = Integer.parseInt(values[2]);
+                        FlowNode n = map.get(next);
+                        if(n != null) {
+                            entry.getValue().addChild(n);
+                        }
+                        break;
                     }
+                    // If the node is a goto
+                    //      break the existing condition
+                    //      add the new child from map
+                    case "goto": {
+                        String[] values = entry.getValue().getRaw().split(" ");
 
-                    Integer next = Integer.parseInt(values[2]);
-                    FlowNode n = map.get(next);
-                    entry.getValue().addChild(n);
-                }
-                // If the node is a return
-                //      remove existing children
-                else if (entry.getValue().getType().equals("return")){
-                    Iterator<Integer> it = entry.getValue().getChildren().iterator();
-                    while (it.hasNext()) {
-                        it.next();
-                        it.remove();
+                        Iterator<Integer> it = entry.getValue().getChildren().iterator();
+                        while (it.hasNext()) {
+                            it.next();
+                            it.remove();
+                        }
+
+                        Integer next = Integer.parseInt(values[2]);
+                        FlowNode n = map.get(next);
+                        if(n != null) {
+                            entry.getValue().addChild(n);
+                        }
+                        break;
+                    }
+                    // If the node is a return
+                    //      remove existing children
+                    case "return": {
+                        Iterator<Integer> it = entry.getValue().getChildren().iterator();
+                        while (it.hasNext()) {
+                            it.next();
+                            it.remove();
+                        }
+                        break;
                     }
                 }
 

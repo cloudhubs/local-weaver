@@ -13,6 +13,7 @@ import javassist.bytecode.AnnotationsAttribute;
 import javassist.bytecode.annotation.Annotation;
 import javassist.bytecode.annotation.MemberValue;
 import org.springframework.stereotype.Service;
+import org.springframework.util.ClassUtils;
 
 import java.util.*;
 
@@ -98,8 +99,14 @@ public class SeerMsComponentContextService {
   }
 
   private ComponentType getComponentClassWithoutAnnotation(CtClass ctClass) {
-      return getComponentTypeRaw(ctClass.getName());
+    if(Arrays.asList(ctClass.getClassFile2().getInterfaces())
+      .contains("org.springframework.data.repository.Repository")) {
+      return ComponentType.REPOSITORY;
+    }
+    return ComponentType.OTHER_COMPONENT;
   }
+
+  //
 
   private ComponentType getComponentWithAnnotation(CtClass ctClass, Annotation[] annotations) {
     ComponentType componentType = null;
@@ -252,14 +259,14 @@ public class SeerMsComponentContextService {
     return null;
   }
 
-  private static ComponentType getComponentTypeRaw(String componentName) {
-    String name = componentName.toLowerCase();
-    if(name.contains("repository")) return ComponentType.REPOSITORY;
-    if(name.contains("service")) return ComponentType.SERVICE;
-    if(name.contains("controller")) return ComponentType.CONTROLLER;
-    if(name.contains("entity")) return ComponentType.ENTITY;
-    else return ComponentType.GENERIC_COMPONENT;
-  }
+//  private static ComponentType getComponentTypeRaw(String componentName) {
+//    String name = componentName.toLowerCase();
+//    if(name.contains("repository")) return ComponentType.REPOSITORY;
+//    if(name.contains("service")) return ComponentType.SERVICE;
+//    if(name.contains("controller")) return ComponentType.CONTROLLER;
+//    if(name.contains("entity")) return ComponentType.ENTITY;
+//    else return ComponentType.GENERIC_COMPONENT;
+//  }
 
 
 }
