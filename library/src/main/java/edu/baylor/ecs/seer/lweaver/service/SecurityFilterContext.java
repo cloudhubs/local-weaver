@@ -7,15 +7,15 @@ import java.util.Set;
 
 public class SecurityFilterContext {
 
-    private SecurityFilterStrategy strategy;
+  private SecurityFilterStrategy strategy;
 
-    public SecurityFilterContext(SecurityFilterStrategy strategy) {
-        this.strategy = strategy;
-    }
+  public SecurityFilterContext(SecurityFilterStrategy strategy) {
+    this.strategy = strategy;
+  }
 
-    public boolean doFilter(CtClass clazz,
-                            Set<SecurityRootMethod> methods) {
-        return strategy.doFilter(clazz, methods);
-    }
+  public boolean doFilter(CtClass clazz,
+                          Set<SecurityRootMethod> methods) {
+    return strategy.doFilter(clazz, methods);
+  }
 
 }

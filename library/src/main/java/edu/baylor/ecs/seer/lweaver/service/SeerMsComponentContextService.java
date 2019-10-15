@@ -13,9 +13,13 @@ import javassist.bytecode.AnnotationsAttribute;
 import javassist.bytecode.annotation.Annotation;
 import javassist.bytecode.annotation.MemberValue;
 import org.springframework.stereotype.Service;
-import org.springframework.util.ClassUtils;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 
 @Service
 public class SeerMsComponentContextService {
@@ -44,34 +48,38 @@ public class SeerMsComponentContextService {
     Set<CtClass> serviceClasses = new HashSet<>();
     Set<CtClass> repositoryClasses = new HashSet<>();
     Set<CtClass> genericClasses = new HashSet<>();
+    Set<CtClass> otherClasses = new HashSet<>();
 
     for (CtClass ctClass : allClasses) {
-        ComponentType componentType;
+      ComponentType componentType;
 
-        Optional<Annotation[]> annotations = getAnnotationForClass(ctClass);
-        if(annotations.isPresent()){
-          componentType = getComponentWithAnnotation(ctClass, annotations.get());
-        } else {
-          componentType = getComponentClassWithoutAnnotation(ctClass);
-        }
+      Optional<Annotation[]> annotations = getAnnotationForClass(ctClass);
+      if (annotations.isPresent()) {
+        componentType = getComponentWithAnnotation(ctClass, annotations.get());
+      } else {
+        componentType = getComponentClassWithoutAnnotation(ctClass);
+      }
 
-        switch (componentType) {
-            case ENTITY:
-                entityClasses.add(ctClass);
-                break;
-            case CONTROLLER:
-                controllerClasses.add(ctClass);
-                break;
-            case SERVICE:
-                serviceClasses.add(ctClass);
-                break;
-            case REPOSITORY:
-                repositoryClasses.add(ctClass);
-                break;
-            default:
-                genericClasses.add(ctClass);
-                break;
-        }
+      switch (componentType) {
+        case ENTITY:
+          entityClasses.add(ctClass);
+          break;
+        case CONTROLLER:
+          controllerClasses.add(ctClass);
+          break;
+        case SERVICE:
+          serviceClasses.add(ctClass);
+          break;
+        case REPOSITORY:
+          repositoryClasses.add(ctClass);
+          break;
+        case GENERIC_COMPONENT:
+          genericClasses.add(ctClass);
+          break;
+        default:
+          otherClasses.add(ctClass);
+          break;
+      }
     }
 
     seerComponents.setEntities(deriveComponent(entityClasses, ComponentType.ENTITY));
@@ -79,6 +87,7 @@ public class SeerMsComponentContextService {
     seerComponents.setServices(deriveComponent(serviceClasses, ComponentType.SERVICE));
     seerComponents.setComponents(deriveComponent(genericClasses, ComponentType.GENERIC_COMPONENT));
     seerComponents.setRepositories(deriveComponent(repositoryClasses, ComponentType.REPOSITORY));
+    seerComponents.setOthers(deriveComponent(otherClasses, ComponentType.OTHER_COMPONENT));
 
     return seerComponents;
   }
@@ -88,7 +97,7 @@ public class SeerMsComponentContextService {
       (AnnotationsAttribute) ctClass.getClassFile().getAttribute(AnnotationsAttribute.visibleTag);
     if (annotationsAttribute != null) {
       Annotation[] annotations = annotationsAttribute.getAnnotations();
-      if(annotations.length < 1) {
+      if (annotations.length < 1) {
         return Optional.empty();
       } else {
         return Optional.of(annotations);
@@ -98,23 +107,21 @@ public class SeerMsComponentContextService {
     }
   }
 
+  private ComponentType getComponentWithAnnotation(CtClass ctClass, Annotation[] annotations) {
+    ComponentType componentType;
+    for (Annotation annotation : annotations) {
+      componentType = getComponentTypeAnnotation(annotation.getTypeName());
+      if (componentType != null) return componentType;
+    }
+    return getComponentClassWithoutAnnotation(ctClass);
+  }
+
   private ComponentType getComponentClassWithoutAnnotation(CtClass ctClass) {
-    if(Arrays.asList(ctClass.getClassFile2().getInterfaces())
+    if (Arrays.asList(ctClass.getClassFile2().getInterfaces())
       .contains("org.springframework.data.repository.Repository")) {
       return ComponentType.REPOSITORY;
     }
     return ComponentType.OTHER_COMPONENT;
-  }
-
-  //
-
-  private ComponentType getComponentWithAnnotation(CtClass ctClass, Annotation[] annotations) {
-    ComponentType componentType = null;
-    for (Annotation annotation : annotations) {
-      componentType = getComponentTypeAnnotation(annotation.getTypeName());
-      if(componentType != null) return componentType;
-    }
-    return getComponentClassWithoutAnnotation(ctClass);
   }
 
   private List<ComponentModel> deriveComponent(Set<CtClass> componentClasses, ComponentType componentType) {
@@ -136,7 +143,7 @@ public class SeerMsComponentContextService {
 
 
       component.setFields(setFields(clazz, componentType));
-      component.setMethods(setMethods(clazz, componentType));
+      component.setMethods(setMethods(clazz));
 
       // add type
       component.setComponentType(componentType);
@@ -146,6 +153,25 @@ public class SeerMsComponentContextService {
     }
 
     return components;
+  }
+
+  private static ComponentType getComponentTypeAnnotation(String annotation) {
+    switch (annotation) {
+      case "javax.persistence.Entity":
+        //      case "javax.persistence.MappedSuperclass":
+        return ComponentType.ENTITY;
+      case "org.springframework.stereotype.Controller":
+      case "org.springframework.web.bind.annotation.RestController":
+        return ComponentType.CONTROLLER;
+      case "org.springframework.stereotype.Service":
+        return ComponentType.SERVICE;
+      case "org.springframework.stereotype.Repository":
+        return ComponentType.REPOSITORY;
+      //      case "org.springframework.boot.autoconfigure.SpringBootApplication":
+      case "org.springframework.stereotype.Component":
+        return ComponentType.GENERIC_COMPONENT;
+    }
+    return null;
   }
 
   private List<SeerField> setFields(CtClass clazz, ComponentType componentType) {
@@ -192,7 +218,7 @@ public class SeerMsComponentContextService {
     return seerFields;
   }
 
-  private List<SeerFlowMethodRepresentation> setMethods(CtClass clazz, ComponentType componentType) {
+  private List<SeerFlowMethodRepresentation> setMethods(CtClass clazz) {
     List<SeerFlowMethodRepresentation> methodRepresentations = flowService.processClazz(clazz);
     bytecodeService.process(methodRepresentations);
     return methodRepresentations;
@@ -241,32 +267,14 @@ public class SeerMsComponentContextService {
     }
   }
 
-  private static ComponentType getComponentTypeAnnotation(String annotation) {
-    switch (annotation) {
-      case "javax.persistence.Entity":
-      case "javax.persistence.MappedSuperclass":
-        return ComponentType.ENTITY;
-      case "org.springframework.stereotype.Controller":
-      case "org.springframework.web.bind.annotation.RestController":
-        return ComponentType.CONTROLLER;
-      case "org.springframework.stereotype.Service":
-        return ComponentType.SERVICE;
-      case "org.springframework.stereotype.Repository":
-        return ComponentType.REPOSITORY;
-      case "org.springframework.boot.autoconfigure.SpringBootApplication":
-      case "org.springframework.stereotype.Component":
-    }
-    return null;
-  }
-
-//  private static ComponentType getComponentTypeRaw(String componentName) {
-//    String name = componentName.toLowerCase();
-//    if(name.contains("repository")) return ComponentType.REPOSITORY;
-//    if(name.contains("service")) return ComponentType.SERVICE;
-//    if(name.contains("controller")) return ComponentType.CONTROLLER;
-//    if(name.contains("entity")) return ComponentType.ENTITY;
-//    else return ComponentType.GENERIC_COMPONENT;
-//  }
+  //  private static ComponentType getComponentTypeRaw(String componentName) {
+  //    String name = componentName.toLowerCase();
+  //    if(name.contains("repository")) return ComponentType.REPOSITORY;
+  //    if(name.contains("service")) return ComponentType.SERVICE;
+  //    if(name.contains("controller")) return ComponentType.CONTROLLER;
+  //    if(name.contains("entity")) return ComponentType.ENTITY;
+  //    else return ComponentType.GENERIC_COMPONENT;
+  //  }
 
 
 }
