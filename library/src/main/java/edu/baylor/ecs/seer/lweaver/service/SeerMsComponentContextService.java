@@ -12,6 +12,8 @@ import javassist.NotFoundException;
 import javassist.bytecode.AnnotationsAttribute;
 import javassist.bytecode.annotation.Annotation;
 import javassist.bytecode.annotation.MemberValue;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -23,6 +25,8 @@ import java.util.Set;
 
 @Service
 public class SeerMsComponentContextService {
+
+  Logger logger = LoggerFactory.getLogger(this.getClass().getName());
 
   // Service for managing the flow aspect of the microservices
   private final FlowStructureService flowService;
@@ -124,7 +128,7 @@ public class SeerMsComponentContextService {
     return ComponentType.OTHER_COMPONENT;
   }
 
-  private List<ComponentModel> deriveComponent(Set<CtClass> componentClasses, ComponentType componentType) {
+  private Set<ComponentModel> deriveComponent(Set<CtClass> componentClasses, ComponentType componentType) {
 
     /*
      * ToDo: Different strategy for annotations on fields and setters (FieldAnnotationStrategy...)
@@ -132,12 +136,12 @@ public class SeerMsComponentContextService {
      * ToDo: separate building the object, field aggregation, field processing, find matching setter
      */
 
-    List<ComponentModel> components = new ArrayList<>();
+    Set<ComponentModel> components = new HashSet<>();
 
     // Loop through every class
     for (CtClass clazz : componentClasses) {
 
-      // Create a new EntityModel for the class
+      // Create a new ComponentModel for the class
       ComponentModel component = new ComponentModel(clazz.getName());
       component.setClassNameShort(clazz.getName().substring(clazz.getName().lastIndexOf(".") + 1));
 
@@ -145,8 +149,11 @@ public class SeerMsComponentContextService {
       component.setFields(setFields(clazz, componentType));
       component.setMethods(setMethods(clazz));
 
-      // add type
+      // set type
       component.setComponentType(componentType);
+
+      // set ctClass
+      setCtClassOptions(component, clazz);
 
       // Add the entity to the list
       components.add(component);
@@ -155,21 +162,45 @@ public class SeerMsComponentContextService {
     return components;
   }
 
+  private void setCtClassOptions(ComponentModel component, CtClass ctClass) {
+    ComponentModel.CtType ctType;
+
+    if(ctClass.isInterface()) {
+      ctType = ComponentModel.CtType.INTERFACE_TYPE;
+    } else if(ctClass.isEnum()) {
+      ctType = ComponentModel.CtType.ENUM_TYPE;
+    } else {
+      ctType = ComponentModel.CtType.CLASS_TYPE;
+    }
+
+    component.setCtType(ctType);
+    component.setExtendingClass(ctClass.getClassFile2().getSuperclass());
+    component.setImplementingInterfaces(ctClass.getClassFile2().getInterfaces());
+  }
+
   private static ComponentType getComponentTypeAnnotation(String annotation) {
     switch (annotation) {
+      // spring boot annotations
       case "javax.persistence.Entity":
-        //      case "javax.persistence.MappedSuperclass":
         return ComponentType.ENTITY;
+
       case "org.springframework.stereotype.Controller":
       case "org.springframework.web.bind.annotation.RestController":
         return ComponentType.CONTROLLER;
+
       case "org.springframework.stereotype.Service":
+        // ejb annotations
+      case "javax.ejb.Stateless":
+      case "javax.ejb.Stateful":
+      case "javax.ejb.MessageDrivenBean":
         return ComponentType.SERVICE;
+
       case "org.springframework.stereotype.Repository":
         return ComponentType.REPOSITORY;
-      //      case "org.springframework.boot.autoconfigure.SpringBootApplication":
+
       case "org.springframework.stereotype.Component":
         return ComponentType.GENERIC_COMPONENT;
+
     }
     return null;
   }
@@ -205,7 +236,7 @@ public class SeerMsComponentContextService {
 
 
       } catch (NotFoundException e) {
-        e.printStackTrace();
+        logger.error("Ignoring field " + field.getName());
       }
 
       if (componentType == ComponentType.ENTITY) {
