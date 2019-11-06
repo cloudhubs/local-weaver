@@ -201,6 +201,7 @@ public class SeerMsSecurityContextService {
                 // violations.add(new SeerSecurityConstraintViolation(ViolationType.INVALID_ROLE, violatingMethod));
                 if (depth2 > depth1) {
                     SeerSecurityNode n1 = context.getRoot().search(getFormattedRoleName(r1));
+                    if(n1 == null) continue;
                     boolean hierarchy = n1.childContains(getFormattedRoleName(r2));
                     if (hierarchy) {
                         violations.add(new SeerSecurityConstraintViolation(ViolationType.HIERARCHY, violatingMethod));
@@ -209,6 +210,7 @@ public class SeerMsSecurityContextService {
                     }
                 } else if (depth2 < depth1) {
                     SeerSecurityNode n2 = context.getRoot().search(getFormattedRoleName(r2));
+                    if(n2 == null) continue;
                     boolean hierarchy = n2.childContains(getFormattedRoleName(r1));
                     if (hierarchy) {
                         violations.add(new SeerSecurityConstraintViolation(ViolationType.HIERARCHY, violatingMethod));
