@@ -157,8 +157,8 @@ public class SeerContextService {
                 msContext.setApi(seerApiContext);
             }
 
-            //SeerSecurityContext seerSecurityContext = securityService.getMsSeerSecurityContext(ctClasses, request);
-            //msContext.setSecurity(seerSecurityContext);
+            SeerSecurityContext seerSecurityContext = securityService.getMsSeerSecurityContext(ctClasses, request);
+            msContext.setSecurity(seerSecurityContext);
 
             msContexts.add(msContext);
 
