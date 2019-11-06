@@ -22,29 +22,29 @@ public class SecurityFilterGeneralAnnotationStrategy implements SecurityFilterSt
     public boolean doFilter(CtClass clazz,
                             Set<SecurityRootMethod> securityMethods) {
 
-        if(clazz.getPackageName().startsWith("java.")){
+        if (clazz.getPackageName().startsWith("java.")) {
             return true;
         }
 
         AnnotationsAttribute annotationsAttribute = (AnnotationsAttribute) clazz.getClassFile().getAttribute(AnnotationsAttribute.visibleTag);
-        if(annotationsAttribute == null){
+        if (annotationsAttribute == null) {
             return true;
         }
         Annotation[] clazzAnnotations = annotationsAttribute.getAnnotations();
 
         boolean isController = false;
-        for(Annotation annotation : clazzAnnotations){
-            if(annotation.getTypeName().equals("org.springframework.web.bind.annotation.RestController")){
+        for (Annotation annotation : clazzAnnotations) {
+            if (annotation.getTypeName().equals("org.springframework.web.bind.annotation.RestController")) {
                 isController = true;
                 break;
             }
         }
 
-        if(isController) {
+        if (isController) {
             CtMethod[] methods = clazz.getMethods();
             for (CtMethod ctMethod : methods) {
 
-                if(ctMethod.getLongName().startsWith("java.")){
+                if (ctMethod.getLongName().startsWith("java.")) {
                     continue;
                 }
 
@@ -71,13 +71,13 @@ public class SecurityFilterGeneralAnnotationStrategy implements SecurityFilterSt
                     e.printStackTrace();
                 }
 
-                if(params.length > 0) {
+                if (params.length > 0) {
                     List<CtClass> streamable = Arrays.asList(params);
 
                     List<String> params_s = streamable
-                                                .stream()
-                                                .map(CtClass::getName)
-                                                .collect(Collectors.toList());
+                            .stream()
+                            .map(CtClass::getName)
+                            .collect(Collectors.toList());
 
                     rootMethod.setParameters(params_s);
                 }
@@ -86,7 +86,7 @@ public class SecurityFilterGeneralAnnotationStrategy implements SecurityFilterSt
                 try {
                     CtClass returnClazz = ctMethod.getReturnType();
 
-                    if(returnClazz.subtypeOf(ClassPool.getDefault().get(Collection.class.getName()))){
+                    if (returnClazz.subtypeOf(ClassPool.getDefault().get(Collection.class.getName()))) {
                         returnType = getReturnType(ctMethod.getGenericSignature());
                     } else {
                         returnType = returnClazz.getName();
@@ -119,71 +119,72 @@ public class SecurityFilterGeneralAnnotationStrategy implements SecurityFilterSt
                                     }
                                 }
                             }
-
-                            try {
-                                ctMethod.instrument(
-                                    new ExprEditor() {
-                                        public void edit(MethodCall m) {
-
-                                            String fullSignature = "";
-                                            try{
-                                                CtMethod meth = m.getMethod();
-                                                fullSignature = meth.getLongName();
-                                            } catch (NotFoundException e){
-                                                String className = m.getClassName();
-                                                String methodName = m.getMethodName();
-                                                String signature = sigToPackage(m.getSignature());
-                                                fullSignature = className.concat(".").concat(methodName).concat(signature);
-                                            }
-
-                                            final String sig = fullSignature;
-
-                                            if (!fullSignature.startsWith("java.")) {
-                                                securityMethods
-                                                        .stream()
-                                                        .filter(x -> x.getMethodName()
-                                                                .equals(ctMethod.getLongName()))
-                                                        .findFirst()
-                                                        .ifPresent(mthd -> mthd.getChildMethods().add(sig));
-                                            }
-                                        }
-                                    }
-                                );
-                            } catch (CannotCompileException cex) {
-                                System.out.println(cex.toString());
-                                return false;
-                            }
                         } else if (annotation.getTypeName().equals("org.springframework.web.bind.annotation.PostMapping")) {
                             hasHttpType = true;
                             rootMethod.setHttpType(HttpType.POST);
-                        } else if (annotation.getTypeName().equals("org.springframework.web.bind.annotation.GetMapping")){
+                        } else if (annotation.getTypeName().equals("org.springframework.web.bind.annotation.GetMapping")) {
                             hasHttpType = true;
                             rootMethod.setHttpType(HttpType.GET);
-                        } else if (annotation.getTypeName().equals("org.springframework.web.bind.annotation.PutMapping")){
+                        } else if (annotation.getTypeName().equals("org.springframework.web.bind.annotation.PutMapping")) {
                             hasHttpType = true;
                             rootMethod.setHttpType(HttpType.PUT);
-                        } else if (annotation.getTypeName().equals("org.springframework.web.bind.annotation.DeleteMapping")){
+                        } else if (annotation.getTypeName().equals("org.springframework.web.bind.annotation.DeleteMapping")) {
                             hasHttpType = true;
                             rootMethod.setHttpType(HttpType.DELETE);
-                        } else if (annotation.getTypeName().equals("org.springframework.web.bind.annotation.PatchMapping")){
+                        } else if (annotation.getTypeName().equals("org.springframework.web.bind.annotation.PatchMapping")) {
                             hasHttpType = true;
                             rootMethod.setHttpType(HttpType.PATCH);
-                        } else if (annotation.getTypeName().equals("org.springframework.web.bind.annotation.RequestMapping")){
+                        } else if (annotation.getTypeName().equals("org.springframework.web.bind.annotation.RequestMapping")) {
                             hasHttpType = true;
                             rootMethod.setHttpType(HttpType.NONE);
                         }
                     }
 
-                    if(!hasSecurity){
+                    if (!hasSecurity) {
                         rootMethod.getRoles().add("SEER_ALL_ACCESS_ALLOWED");
                     }
 
-                    if(!hasHttpType){
+                    if (!hasHttpType) {
                         rootMethod.setHttpType(HttpType.NONE);
                     }
                 } else {
                     rootMethod.getRoles().add("SEER_ALL_ACCESS_ALLOWED");
                     rootMethod.setHttpType(HttpType.NONE);
+                }
+
+                // find children
+                try {
+                    ctMethod.instrument(
+                            new ExprEditor() {
+                                public void edit(MethodCall m) {
+
+                                    String fullSignature = "";
+                                    try {
+                                        CtMethod meth = m.getMethod();
+                                        fullSignature = meth.getLongName();
+                                    } catch (NotFoundException e) {
+                                        String className = m.getClassName();
+                                        String methodName = m.getMethodName();
+                                        String signature = sigToPackage(m.getSignature());
+                                        fullSignature = className.concat(".").concat(methodName).concat(signature);
+                                    }
+
+                                    final String sig = fullSignature;
+
+                                    if (!fullSignature.startsWith("java.")) {
+                                        securityMethods
+                                                .stream()
+                                                .filter(x -> x.getMethodName()
+                                                        .equals(ctMethod.getLongName()))
+                                                .findFirst()
+                                                .ifPresent(mthd -> mthd.getChildMethods().add(sig));
+                                    }
+                                }
+                            }
+                    );
+                } catch (CannotCompileException cex) {
+                    System.out.println(cex.toString());
+                    return false;
                 }
             }
         }
@@ -191,7 +192,7 @@ public class SecurityFilterGeneralAnnotationStrategy implements SecurityFilterSt
         return true;
     }
 
-    private String sigToPackage(String sig){
+    private String sigToPackage(String sig) {
         // Removes the return value
         String pckge = sig.substring(0, sig.lastIndexOf(")") + 1);
 
@@ -200,7 +201,7 @@ public class SecurityFilterGeneralAnnotationStrategy implements SecurityFilterSt
         pckge = pckge.replaceAll("[)]", "");
 
         // Ljava/lang/Object; -> java/lang/Object;
-        if(pckge.startsWith("L")){
+        if (pckge.startsWith("L")) {
             pckge = pckge.substring(1);
         }
 
@@ -208,9 +209,9 @@ public class SecurityFilterGeneralAnnotationStrategy implements SecurityFilterSt
         pckge = pckge.replaceAll("/", ".");
 
         // java.lang.Object; -> java.lang.Object
-        if(pckge.contains(";")){
+        if (pckge.contains(";")) {
             int count = StringUtils.countOccurrencesOf(pckge, ";");
-            if(count == 1){
+            if (count == 1) {
                 pckge = pckge.replaceAll(";", "");
             } else {
                 int lastNdx = pckge.lastIndexOf(";");
@@ -224,8 +225,8 @@ public class SecurityFilterGeneralAnnotationStrategy implements SecurityFilterSt
         return pckge;
     }
 
-    private String getReturnType(String sig){
-        if(sig == null){
+    private String getReturnType(String sig) {
+        if (sig == null) {
             return "";
         }
         String returnType = sig;
@@ -235,7 +236,7 @@ public class SecurityFilterGeneralAnnotationStrategy implements SecurityFilterSt
         returnType = returnType.substring(ndx + 1);
 
         // Ljava/util/List<Ledu/baylor/ecs/qms/model/Configuration;>; -> java/util/List<Ledu/baylor/ecs/qms/model/Configuration;>;
-        if(returnType.startsWith("L")){
+        if (returnType.startsWith("L")) {
             returnType = returnType.substring(1);
         }
 
@@ -252,7 +253,7 @@ public class SecurityFilterGeneralAnnotationStrategy implements SecurityFilterSt
         String innerClass = returnType.substring(startNdx, endNdx);
 
         // Ledu/baylor/ecs/qms/model/Configuration; -> edu/baylor/ecs/qms/model/Configuration;
-        if(innerClass.startsWith("L")){
+        if (innerClass.startsWith("L")) {
             innerClass = innerClass.substring(1);
         }
 
