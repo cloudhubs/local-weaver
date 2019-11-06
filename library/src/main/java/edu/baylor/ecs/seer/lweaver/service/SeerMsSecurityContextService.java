@@ -76,6 +76,51 @@ public class SeerMsSecurityContextService {
         return securityContext;
     }
 
+    // this will used in rad analysis
+    public SeerSecurityContext getRadSecurityContext(String roleHierarchy, Set<SecurityRootMethod> allRootMethods, Set<SecurityRootMethod> apiRootMethods) {
+
+        SeerSecurityNode root = createRoleTree(roleHierarchy);
+
+        SeerSecurityContext securityContext = new SeerSecurityContext(roleHierarchy, root);
+
+//        SecurityFilterContext securityFilterContext =
+//                new SecurityFilterContext(new SecurityFilterGeneralAnnotationStrategy());
+//
+//        /* Security method contains: name, roles and children */
+//        Set<SecurityRootMethod> rootMethods = new HashSet<>();
+//
+//        /* ! getSecurityMethods indeed updates the set, despite the fact it retrieves nothing  */
+//        for ( CtClass ctClass : ctClasses ) {
+//            securityFilterContext.doFilter(ctClass, rootMethods);
+//        }
+
+//        reduceMethodRoles(rootMethods, securityContext.getRoot());
+//        securityContext.setSecurityRoots(rootMethods);
+
+        // TODO: use apiRootMethods ?
+        securityContext.setSecurityRoots(allRootMethods);
+        Map<String, SecurityMethod> map = buildMap(securityContext);
+
+        List<SecurityMethod> allSecurityMethods = new ArrayList<>();
+        for(Map.Entry entry : map.entrySet()){
+            allSecurityMethods.add((SecurityMethod) entry.getValue());
+        }
+
+        List<SecurityMethod> violatingMethods = allSecurityMethods
+                .stream()
+                .filter(x -> x.getRoles().size() > 1)
+                .collect(Collectors.toList());
+
+        Set<SeerSecurityConstraintViolation> roleViolations = findEndpointRoleViolations(securityContext, apiRootMethods);
+        roleViolations.addAll(findFlowViolations(securityContext, violatingMethods));
+        Set<SeerSecurityEntityAccessViolation> entityAccessViolations = findApiViolations(securityContext, apiRootMethods);
+
+        securityContext.setRoleViolations(roleViolations);
+        securityContext.setEntityAccessViolations(entityAccessViolations);
+
+        return securityContext;
+    }
+
     private SeerSecurityNode createRoleTree(String roleDef) {
         String[] lines = roleDef.split("\n");
         if (lines[0].contains("->")) {
