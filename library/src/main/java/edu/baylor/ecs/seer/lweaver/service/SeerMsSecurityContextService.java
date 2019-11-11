@@ -83,22 +83,7 @@ public class SeerMsSecurityContextService {
 
         SeerSecurityContext securityContext = new SeerSecurityContext(roleHierarchy, root);
 
-//        SecurityFilterContext securityFilterContext =
-//                new SecurityFilterContext(new SecurityFilterGeneralAnnotationStrategy());
-//
-//        /* Security method contains: name, roles and children */
-//        Set<SecurityRootMethod> rootMethods = new HashSet<>();
-//
-//        /* ! getSecurityMethods indeed updates the set, despite the fact it retrieves nothing  */
-//        for ( CtClass ctClass : ctClasses ) {
-//            securityFilterContext.doFilter(ctClass, rootMethods);
-//        }
-
-//        reduceMethodRoles(rootMethods, securityContext.getRoot());
-//        securityContext.setSecurityRoots(rootMethods);
-
-        // TODO: use apiRootMethods ?
-        securityContext.setSecurityRoots(allRootMethods);
+        securityContext.setSecurityRoots(apiRootMethods);
         Map<String, SecurityMethod> map = buildMap(securityContext);
 
         List<SecurityMethod> allSecurityMethods = new ArrayList<>();
