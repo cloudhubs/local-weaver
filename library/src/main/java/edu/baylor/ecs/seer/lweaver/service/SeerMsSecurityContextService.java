@@ -76,7 +76,7 @@ public class SeerMsSecurityContextService {
         return securityContext;
     }
 
-    private SeerSecurityNode createRoleTree(String roleDef) {
+    public SeerSecurityNode createRoleTree(String roleDef) {
         String[] lines = roleDef.split("\n");
         if (lines[0].contains("->")) {
             System.out.println("ERROR! Line 0 should not be an edge!");
