@@ -171,7 +171,7 @@ public class SeerMsSecurityContextService {
         }
     }
 
-    private Map<String, SecurityMethod> buildMap(SeerSecurityContext context){
+    public Map<String, SecurityMethod> buildMap(SeerSecurityContext context) {
 
         Map<String, SecurityMethod> allSecurityMethods = new HashMap<>();
         Queue<String> queue = new LinkedList<>();
@@ -200,7 +200,7 @@ public class SeerMsSecurityContextService {
         return allSecurityMethods;
     }
 
-    private Set<SeerSecurityConstraintViolation> findEndpointRoleViolations(SeerSecurityContext context, Set<SecurityRootMethod> allEntryPoints){
+    public Set<SeerSecurityConstraintViolation> findEndpointRoleViolations(SeerSecurityContext context, Set<SecurityRootMethod> allEntryPoints) {
         Set<SeerSecurityConstraintViolation> violations = new HashSet<>();
 
         for(SecurityRootMethod rootMethod : allEntryPoints){
@@ -216,7 +216,7 @@ public class SeerMsSecurityContextService {
         return violations;
     }
 
-    private Set<SeerSecurityConstraintViolation> findFlowViolations(SeerSecurityContext context, List<SecurityMethod> violatingMethods){
+    public Set<SeerSecurityConstraintViolation> findFlowViolations(SeerSecurityContext context, List<SecurityMethod> violatingMethods) {
         Set<SeerSecurityConstraintViolation> violations = new HashSet<>();
 
         for(SecurityMethod violatingMethod : violatingMethods){
@@ -256,7 +256,7 @@ public class SeerMsSecurityContextService {
         return violations;
     }
 
-    private Set<SeerSecurityEntityAccessViolation> findApiViolations(SeerSecurityContext context, Set<SecurityRootMethod> allEntryPoints){
+    public Set<SeerSecurityEntityAccessViolation> findApiViolations(SeerSecurityContext context, Set<SecurityRootMethod> allEntryPoints) {
         Set<SeerSecurityEntityAccessViolation> violations = new HashSet<>();
 
         List<SecurityRootMethod> asList = new ArrayList<>(allEntryPoints);
