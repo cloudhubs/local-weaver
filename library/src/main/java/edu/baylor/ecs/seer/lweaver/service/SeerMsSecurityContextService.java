@@ -33,7 +33,7 @@ public class SeerMsSecurityContextService {
      *
      * @return a {@link SeerContext} populated with {@link SeerMsContext} objects
      */
-    SeerSecurityContext getMsSeerSecurityContext(List<CtClass> ctClasses, SeerRequestContext req) {
+    public SeerSecurityContext getMsSeerSecurityContext(List<CtClass> ctClasses, SeerRequestContext req) {
 
         String roleHierarchy = req.getSecurityAnalyzerInterface();
         SeerSecurityNode root = createRoleTree(roleHierarchy);
